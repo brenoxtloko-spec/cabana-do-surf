@@ -252,7 +252,7 @@
             </div>
             <div class="notice" style="margin-top:14px;">
               <strong>Pix:</strong><br>
-              Chave Pix exemplo: <span id="pixKey">SEU-PIX-AQUI</span>
+              Chave Pix exemplo: <span id="pixKey">24998251902</span>
             </div>
             <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;">
               <button class="btn" onclick="finishOrder()">Finalizar pedido</button>
@@ -263,7 +263,7 @@
           <div class="checkout-box" style="padding:18px;">
             <h3 style="margin-top:0">Pagamento e envio</h3>
             <div class="feature-list">
-              <div class="feature-item"><strong>WhatsApp da loja</strong><br><span class="muted" id="whatsDisplay">(11) 99999-9999</span></div>
+              <div class="feature-item"><strong>WhatsApp da loja</strong><br><span class="muted" id="whatsDisplay">(24) 99825-1902</span></div>
               <div class="feature-item"><strong>Entrega estimada</strong><br><span class="muted" id="estimateText">Preencha a distância no checkout</span></div>
               <div class="feature-item"><strong>Status do pedido</strong><br><span class="muted">Após finalizar, o pedido fica salvo no painel admin.</span></div>
             </div>
@@ -357,7 +357,7 @@
     </section>
   </main>
 
-  <a class="wa" id="waBtn" href="https://wa.me/5511999999999" target="_blank" title="WhatsApp">☎</a>
+  <a class="wa" id="waBtn" href="https://wa.me/5524998251902" target="_blank" title="WhatsApp">☎</a>
 
   <footer>
     <div class="container">Cabana do Surf • Loja online completa • Admin senha padrão: 1234</div>
@@ -372,9 +372,9 @@
     ];
 
     const DEFAULT_SETTINGS = {
-      whatsapp: '5511999999999',
-      whatsappText: '(11) 99999-9999',
-      pix: 'SEU-PIX-AQUI',
+      whatsapp: '5524998251902',
+      whatsappText: '(24) 99825-1902',
+      pix: '24998251902',
       freeKm: 5,
       businessStart: 9,
       businessEnd: 18
@@ -642,10 +642,10 @@
       updateTotals();
     }
     function saveSettings() {
-      const text = byId('sWhatsapp').value.trim() || '(11) 99999-9999';
+      const text = byId('sWhatsapp').value.trim() || '(24) 99825-1902';
       settings.whatsappText = text;
       settings.whatsapp = text.replace(/\D/g, '');
-      settings.pix = byId('sPix').value.trim() || 'SEU-PIX-AQUI';
+      settings.pix = byId('sPix').value.trim() || '24998251902';
       settings.freeKm = Number(byId('sFreeKm').value || 5);
       settings.businessStart = Number(byId('sBusinessStart').value || 9);
       settings.businessEnd = Number(byId('sBusinessEnd').value || 18);
