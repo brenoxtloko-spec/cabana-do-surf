@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cabana do Surf</title>
+  <style>
+    :root {
+      --bg: #0b0b0b;
+      --panel: #121212;
+      --panel-2: #171717;
+      --gold: #d4a64a;
+      --gold-2: #f0c96a;
+      --text: #f5f1e8;
+      --muted: #b8b0a0;
+      --border: rgba(212,166,74,.22);
+      --green: #1ecb5c;
+      --red: #cc3d3d;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, #080808, #12100d 45%, #080808);
+      color: var(--text);
+    }
+    a { color: inherit; text-decoration: none; }
+    .container { width: min(1180px, calc(100% - 24px)); margin: 0 auto; }
+    header {
+      position: sticky; top: 0; z-index: 20;
+      backdrop-filter: blur(10px);
+      background: rgba(0,0,0,.88);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; padding: 16px 0;
+    }
+    .brand { font-size: 28px; font-weight: 800; color: var(--gold-2); letter-spacing: .5px; }
+    .menu { display: flex; gap: 18px; flex-wrap: wrap; }
+    .menu a, .menu button {
+      background: none; border: 1px solid transparent; color: var(--text);
+      cursor: pointer; padding: 10px 14px; border-radius: 12px; font-size: 15px;
+    }
+    .menu a:hover, .menu button:hover { border-color: var(--border); color: var(--gold-2); }
+    .hero {
+      padding: 72px 0 28px;
+      background: radial-gradient(circle at 30% 30%, rgba(212,166,74,.14), transparent 38%),
+                  radial-gradient(circle at 80% 20%, rgba(212,166,74,.08), transparent 32%);
+    }
+    .hero-grid {
+      display: grid; grid-template-columns: 1.2fr .8fr; gap: 24px; align-items: center;
+    }
+    .tag {
+      display: inline-block; padding: 10px 16px; border: 1px solid var(--border);
+      border-radius: 999px; color: var(--gold-2); margin-bottom: 18px; background: rgba(212,166,74,.06);
+    }
+    h1 {
+      font-size: clamp(40px, 6vw, 74px); line-height: .98; margin: 0 0 18px; font-family: Georgia, serif;
+    }
+    .accent { color: var(--gold-2); }
+    .lead { color: var(--muted); font-size: 18px; line-height: 1.6; max-width: 720px; }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+    .btn {
+      background: linear-gradient(180deg, var(--gold-2), var(--gold)); color: #15110a; font-weight: 700;
+      border: 0; border-radius: 14px; padding: 14px 18px; cursor: pointer;
+    }
+    .btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .hero-card, .card, .admin-box, .checkout-box {
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
+      border: 1px solid var(--border); border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,.24);
+    }
+    .hero-card { padding: 20px; }
+    .feature-list { display: grid; gap: 12px; }
+    .feature-item { padding: 16px; border-radius: 18px; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05); }
+    .strip {
+      padding: 18px 0 8px;
+    }
+    .strip-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    }
+    .strip-item {
+      padding: 18px; border-radius: 18px; border: 1px solid var(--border); background: rgba(0,0,0,.24);
+    }
+    section { padding: 28px 0; }
+    .section-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 18px; }
+    .section-head h2 { margin: 0; font-size: 30px; font-family: Georgia, serif; }
+    .muted { color: var(--muted); }
+    .filters {
+      display: grid; grid-template-columns: 1fr 220px 180px; gap: 12px; margin-bottom: 18px;
+    }
+    input, select, textarea {
+      width: 100%; padding: 14px; border-radius: 14px; border: 1px solid var(--border);
+      background: #111; color: var(--text); outline: none;
+    }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+    .card { overflow: hidden; }
+    .card img { width: 100%; height: 260px; object-fit: cover; display: block; }
+    .card-body { padding: 16px; }
+    .price-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .price { font-size: 22px; font-weight: 800; color: var(--gold-2); }
+    .badge { display: inline-block; padding: 6px 10px; border-radius: 999px; background: rgba(212,166,74,.1); color: var(--gold-2); border: 1px solid var(--border); font-size: 12px; }
+    .sizes { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 14px; }
+    .size { border: 1px solid rgba(255,255,255,.12); border-radius: 999px; padding: 6px 10px; font-size: 12px; }
+    .layout-main { display: grid; grid-template-columns: 1fr 360px; gap: 22px; }
+    .cart-item { display: grid; grid-template-columns: 56px 1fr auto; gap: 10px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .cart-item img { width: 56px; height: 56px; object-fit: cover; border-radius: 12px; }
+    .mini-btn { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; }
+    .qty { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .summary { display: grid; gap: 10px; margin-top: 16px; }
+    .summary-row { display: flex; justify-content: space-between; gap: 10px; }
+    .total { font-size: 22px; font-weight: 800; }
+    .notice { padding: 12px 14px; border-radius: 14px; background: rgba(212,166,74,.08); border: 1px solid var(--border); color: var(--gold-2); }
+    .success { color: #dff6e7; background: rgba(30,203,92,.14); border-color: rgba(30,203,92,.3); }
+    .danger { color: #ffe0e0; background: rgba(204,61,61,.12); border-color: rgba(204,61,61,.3); }
+    #adminPanel { display:none; }
+    .tabs { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0; }
+    .tab-btn { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: #111; color: var(--text); cursor: pointer; }
+    .tab-btn.active { background: linear-gradient(180deg, var(--gold-2), var(--gold)); color: #15110a; font-weight: 700; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
+    .stat { padding: 18px; border-radius: 18px; background: #111; border: 1px solid var(--border); }
+    .orders, .product-list { display: grid; gap: 12px; }
+    .order, .prod-row { padding: 14px; border-radius: 18px; background: #111; border: 1px solid var(--border); }
+    .prod-row { display: grid; grid-template-columns: 72px 1fr auto; gap: 12px; align-items: center; }
+    .prod-row img { width: 72px; height: 72px; object-fit: cover; border-radius: 14px; }
+    .admin-grid { display: grid; grid-template-columns: 360px 1fr; gap: 18px; }
+    .hidden { display: none; }
+    .wa {
+      position: fixed; right: 18px; bottom: 18px; width: 64px; height: 64px; border-radius: 50%;
+      background: #25D366; display: grid; place-items: center; font-size: 28px; color: white; font-weight: 800;
+      box-shadow: 0 12px 24px rgba(0,0,0,.25); z-index: 30;
+    }
+    footer { padding: 34px 0 60px; color: var(--muted); text-align: center; }
+    @media (max-width: 1024px) {
+      .hero-grid, .layout-main, .admin-grid { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: repeat(2, 1fr); }
+      .strip-grid, .stats { grid-template-columns: repeat(2, 1fr); }
+      .filters { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .grid, .strip-grid, .stats { grid-template-columns: 1fr; }
+      .menu { display:none; }
+      h1 { font-size: 44px; }
+      .brand { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <a href="#top" class="brand">CABANA DO SURF</a>
+      <nav class="menu">
+        <a href="#produtos">Produtos</a>
+        <a href="#checkout">Checkout</a>
+        <button onclick="goAdminLogin()">Admin</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <div class="tag">Nova coleção 2026</div>
+          <h1>Estilo que define <span class="accent">quem você é</span></h1>
+          <p class="lead">Loja masculina premium com catálogo completo, carrinho, checkout, frete grátis até 5 km e entrega em até 3 horas no horário comercial.</p>
+          <div class="hero-actions">
+            <a class="btn" href="#produtos">Ver coleção</a>
+            <a class="btn secondary" href="#checkout">Finalizar pedido</a>
+          </div>
+        </div>
+        <div class="hero-card">
+          <div class="feature-list">
+            <div class="feature-item"><strong>Frete grátis</strong><br><span class="muted">Até 5 km da loja</span></div>
+            <div class="feature-item"><strong>Entrega rápida</strong><br><span class="muted">Até 3 horas no horário comercial</span></div>
+            <div class="feature-item"><strong>Pix e WhatsApp</strong><br><span class="muted">Atendimento rápido e direto</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="strip">
+      <div class="container strip-grid">
+        <div class="strip-item"><strong>Frete Grátis</strong><br><span class="muted">Até 5 km de distância</span></div>
+        <div class="strip-item"><strong>Entrega Rápida</strong><br><span class="muted">Em até 3 horas</span></div>
+        <div class="strip-item"><strong>Pagamento Seguro</strong><br><span class="muted">Pix instantâneo</span></div>
+        <div class="strip-item"><strong>Qualidade Premium</strong><br><span class="muted">Moda masculina</span></div>
+      </div>
+    </div>
+
+    <section id="produtos">
+      <div class="container layout-main">
+        <div>
+          <div class="section-head">
+            <div>
+              <h2>Produtos em destaque</h2>
+              <div class="muted">Adicione ao carrinho e finalize no checkout ao lado.</div>
+            </div>
+          </div>
+          <div class="filters">
+            <input id="searchInput" placeholder="Buscar camisa, tênis, bermuda..." oninput="renderProducts()" />
+            <select id="categoryFilter" onchange="renderProducts()">
+              <option value="Todos">Todas categorias</option>
+            </select>
+            <select id="sortFilter" onchange="renderProducts()">
+              <option value="default">Ordenar</option>
+              <option value="low">Menor preço</option>
+              <option value="high">Maior preço</option>
+            </select>
+          </div>
+          <div id="productsGrid" class="grid"></div>
+        </div>
+
+        <aside>
+          <div class="checkout-box" style="padding:18px; position: sticky; top: 88px;">
+            <h3 style="margin-top:0">Carrinho</h3>
+            <div id="cartItems"></div>
+            <div id="emptyCart" class="muted">Seu carrinho está vazio.</div>
+            <div class="summary">
+              <div class="summary-row"><span class="muted">Subtotal</span><strong id="subtotalValue">R$ 0,00</strong></div>
+              <div class="summary-row"><span class="muted">Frete</span><strong id="shippingValue">R$ 0,00</strong></div>
+              <div class="summary-row total"><span>Total</span><span id="totalValue">R$ 0,00</span></div>
+            </div>
+            <div id="deliveryNote" class="notice" style="margin-top:14px;">Informe os dados no checkout para calcular frete.</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="checkout">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2>Checkout</h2>
+            <div class="muted">Feche o pedido com endereço, WhatsApp e Pix.</div>
+          </div>
+        </div>
+        <div class="layout-main">
+          <div class="checkout-box" style="padding:18px;">
+            <div style="display:grid; grid-template-columns: repeat(2,1fr); gap:12px;">
+              <div><input id="name" placeholder="Seu nome" /></div>
+              <div><input id="phone" placeholder="WhatsApp" /></div>
+              <div style="grid-column:1/-1"><input id="address" placeholder="Endereço completo" /></div>
+              <div><input id="district" placeholder="Bairro" /></div>
+              <div><input id="distance" type="number" placeholder="Distância em km" oninput="updateTotals()" /></div>
+              <div style="grid-column:1/-1"><textarea id="note" rows="4" placeholder="Observações do pedido"></textarea></div>
+            </div>
+            <div class="notice" style="margin-top:14px;">
+              <strong>Regras da entrega:</strong><br>
+              Frete grátis até 5 km. Comprou entre 9h e 18h, entregamos em até 3 horas. Acima disso o sistema calcula uma taxa.
+            </div>
+            <div class="notice" style="margin-top:14px;">
+              <strong>Pix:</strong><br>
+              Chave Pix exemplo: <span id="pixKey">SEU-PIX-AQUI</span>
+            </div>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;">
+              <button class="btn" onclick="finishOrder()">Finalizar pedido</button>
+              <button class="btn secondary" onclick="goAdminLogin()">Ir para o admin</button>
+            </div>
+            <div id="checkoutMessage" style="margin-top:14px;"></div>
+          </div>
+          <div class="checkout-box" style="padding:18px;">
+            <h3 style="margin-top:0">Pagamento e envio</h3>
+            <div class="feature-list">
+              <div class="feature-item"><strong>WhatsApp da loja</strong><br><span class="muted" id="whatsDisplay">(11) 99999-9999</span></div>
+              <div class="feature-item"><strong>Entrega estimada</strong><br><span class="muted" id="estimateText">Preencha a distância no checkout</span></div>
+              <div class="feature-item"><strong>Status do pedido</strong><br><span class="muted">Após finalizar, o pedido fica salvo no painel admin.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="adminLogin">
+      <div class="container">
+        <div class="section-head"><div><h2>Painel administrativo</h2><div class="muted">Senha padrão: 1234</div></div></div>
+        <div class="checkout-box" style="padding:18px; max-width:520px;">
+          <input id="adminPassword" type="password" placeholder="Digite a senha do painel" />
+          <div style="margin-top:12px; display:flex; gap:12px;">
+            <button class="btn" onclick="loginAdmin()">Entrar</button>
+          </div>
+          <div id="adminLoginMessage" style="margin-top:12px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="adminPanel">
+      <div class="container">
+        <div class="section-head"><div><h2>Admin Cabana do Surf</h2><div class="muted">Gerencie produtos, pedidos e dados da loja.</div></div></div>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="showTab('dashboard', this)">Dashboard</button>
+          <button class="tab-btn" onclick="showTab('products', this)">Produtos</button>
+          <button class="tab-btn" onclick="showTab('orders', this)">Pedidos</button>
+          <button class="tab-btn" onclick="showTab('settings', this)">Configurações</button>
+        </div>
+
+        <div id="tab-dashboard" class="tab-content">
+          <div class="stats">
+            <div class="stat"><div class="muted">Faturamento</div><h3 id="statRevenue">R$ 0,00</h3></div>
+            <div class="stat"><div class="muted">Pedidos</div><h3 id="statOrders">0</h3></div>
+            <div class="stat"><div class="muted">Produtos</div><h3 id="statProducts">0</h3></div>
+            <div class="stat"><div class="muted">Estoque total</div><h3 id="statStock">0</h3></div>
+          </div>
+        </div>
+
+        <div id="tab-products" class="tab-content hidden">
+          <div class="admin-grid">
+            <div class="admin-box" style="padding:18px;">
+              <h3 style="margin-top:0">Cadastrar produto</h3>
+              <div style="display:grid; gap:10px;">
+                <input id="pName" placeholder="Nome do produto" />
+                <input id="pBrand" placeholder="Marca" />
+                <input id="pCategory" placeholder="Categoria" />
+                <input id="pPrice" type="number" placeholder="Preço" />
+                <input id="pStock" type="number" placeholder="Estoque" />
+                <input id="pSizes" placeholder="Tamanhos ex: P,M,G,GG" />
+                <input id="pImage" placeholder="Link da imagem" />
+                <textarea id="pDesc" rows="4" placeholder="Descrição"></textarea>
+                <button class="btn" onclick="addProduct()">Salvar produto</button>
+              </div>
+            </div>
+            <div class="admin-box" style="padding:18px;">
+              <h3 style="margin-top:0">Produtos cadastrados</h3>
+              <div id="productList" class="product-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-orders" class="tab-content hidden">
+          <div class="admin-box" style="padding:18px;">
+            <h3 style="margin-top:0">Pedidos recebidos</h3>
+            <div id="ordersList" class="orders"></div>
+          </div>
+        </div>
+
+        <div id="tab-settings" class="tab-content hidden">
+          <div class="admin-grid">
+            <div class="admin-box" style="padding:18px;">
+              <h3 style="margin-top:0">Dados da loja</h3>
+              <div style="display:grid; gap:10px;">
+                <input id="sWhatsapp" placeholder="WhatsApp da loja" />
+                <input id="sPix" placeholder="Chave Pix" />
+                <input id="sFreeKm" type="number" placeholder="Frete grátis até quantos km" />
+                <input id="sBusinessStart" type="number" placeholder="Horário início ex: 9" />
+                <input id="sBusinessEnd" type="number" placeholder="Horário fim ex: 18" />
+                <button class="btn" onclick="saveSettings()">Salvar configurações</button>
+              </div>
+            </div>
+            <div class="admin-box" style="padding:18px;">
+              <h3 style="margin-top:0">Instruções</h3>
+              <p class="muted">Altere WhatsApp, Pix, frete grátis e horário comercial. Tudo fica salvo no navegador.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <a class="wa" id="waBtn" href="https://wa.me/5511999999999" target="_blank" title="WhatsApp">☎</a>
+
+  <footer>
+    <div class="container">Cabana do Surf • Loja online completa • Admin senha padrão: 1234</div>
+  </footer>
+
+  <script>
+    const DEFAULT_PRODUCTS = [
+      { id: 1, name: 'Camiseta Premium Off White', brand: 'Cabana do Surf', category: 'Camisetas', price: 89.9, stock: 12, sizes: ['P','M','G','GG'], image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=1200&auto=format&fit=crop', description: 'Peça masculina premium com visual moderno e ótimo caimento.' },
+      { id: 2, name: 'Camisa Polo Surf Wear Azul', brand: 'Cabana do Surf', category: 'Casual', price: 149.9, stock: 8, sizes: ['M','G','GG'], image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1200&auto=format&fit=crop', description: 'Camisa polo masculina estilosa para usar no dia a dia.' },
+      { id: 3, name: 'Tênis Casual Masculino Wave', brand: 'Cabana do Surf', category: 'Tênis', price: 299.9, stock: 5, sizes: ['39','40','41','42'], image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1200&auto=format&fit=crop', description: 'Tênis casual masculino com design versátil e confortável.' },
+      { id: 4, name: 'Bermuda Dry Fit Preta', brand: 'Cabana do Surf', category: 'Academia', price: 99.9, stock: 15, sizes: ['M','G','GG'], image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop', description: 'Bermuda leve, confortável e ideal para treino ou casual.' }
+    ];
+
+    const DEFAULT_SETTINGS = {
+      whatsapp: '5511999999999',
+      whatsappText: '(11) 99999-9999',
+      pix: 'SEU-PIX-AQUI',
+      freeKm: 5,
+      businessStart: 9,
+      businessEnd: 18
+    };
+
+    let products = load('cabana_products', DEFAULT_PRODUCTS);
+    let cart = load('cabana_cart', []);
+    let orders = load('cabana_orders', []);
+    let settings = load('cabana_settings', DEFAULT_SETTINGS);
+
+    function load(key, fallback) {
+      try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch(e) { return fallback; }
+    }
+    function save(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+    function money(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+    function byId(id) { return document.getElementById(id); }
+    function getShipping(distance) {
+      const d = Number(distance || 0);
+      if (!d) return 0;
+      if (d <= Number(settings.freeKm)) return 0;
+      if (d <= 10) return 12;
+      if (d <= 15) return 20;
+      return 30;
+    }
+    function getEstimate(distance) {
+      const h = new Date().getHours();
+      const d = Number(distance || 0);
+      if (!d) return 'Preencha a distância no checkout';
+      if (h >= Number(settings.businessStart) && h < Number(settings.businessEnd)) {
+        return d <= 15 ? 'Seu pedido chega em até 3 horas' : 'Entrega sob consulta';
+      }
+      return 'Pedido fora do horário comercial: envio no próximo período disponível';
+    }
+    function populateCategories() {
+      const select = byId('categoryFilter');
+      const current = select.value;
+      const cats = ['Todos', ...new Set(products.map(p => p.category))];
+      select.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+      select.value = cats.includes(current) ? current : 'Todos';
+    }
+    function renderProducts() {
+      populateCategories();
+      let list = [...products];
+      const q = byId('searchInput').value.toLowerCase();
+      const c = byId('categoryFilter').value;
+      const s = byId('sortFilter').value;
+      if (q) list = list.filter(p => `${p.name} ${p.brand} ${p.category}`.toLowerCase().includes(q));
+      if (c !== 'Todos') list = list.filter(p => p.category === c);
+      if (s === 'low') list.sort((a,b) => a.price - b.price);
+      if (s === 'high') list.sort((a,b) => b.price - a.price);
+      byId('productsGrid').innerHTML = list.map(p => `
+        <div class="card">
+          <img src="${p.image}" alt="${p.name}">
+          <div class="card-body">
+            <div style="display:flex; justify-content:space-between; gap:8px; align-items:start;">
+              <div>
+                <div class="badge">${p.category}</div>
+                <h3 style="margin:10px 0 6px;">${p.name}</h3>
+                <div class="muted">${p.brand}</div>
+              </div>
+              <div class="badge">${p.stock} em estoque</div>
+            </div>
+            <p class="muted">${p.description}</p>
+            <div class="sizes">${p.sizes.map(s => `<span class="size">${s}</span>`).join('')}</div>
+            <div class="price-row">
+              <div class="price">${money(p.price)}</div>
+              <button class="btn" onclick="addToCart(${p.id})">Adicionar</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+    function addToCart(id) {
+      const p = products.find(x => x.id === id);
+      if (!p) return;
+      const found = cart.find(i => i.id === id);
+      if (found) found.quantity += 1;
+      else cart.push({ ...p, quantity: 1 });
+      save('cabana_cart', cart);
+      renderCart();
+    }
+    function changeQty(id, delta) {
+      const item = cart.find(i => i.id === id);
+      if (!item) return;
+      item.quantity += delta;
+      if (item.quantity <= 0) cart = cart.filter(i => i.id !== id);
+      save('cabana_cart', cart);
+      renderCart();
+    }
+    function removeItem(id) {
+      cart = cart.filter(i => i.id !== id);
+      save('cabana_cart', cart);
+      renderCart();
+    }
+    function renderCart() {
+      const holder = byId('cartItems');
+      byId('emptyCart').style.display = cart.length ? 'none' : 'block';
+      holder.innerHTML = cart.map(i => `
+        <div class="cart-item">
+          <img src="${i.image}" alt="${i.name}">
+          <div>
+            <strong>${i.name}</strong><br>
+            <span class="muted">${money(i.price)}</span>
+            <div class="qty">
+              <button class="mini-btn" onclick="changeQty(${i.id}, -1)">-</button>
+              <strong>${i.quantity}</strong>
+              <button class="mini-btn" onclick="changeQty(${i.id}, 1)">+</button>
+            </div>
+          </div>
+          <div>
+            <button class="mini-btn" onclick="removeItem(${i.id})">Excluir</button>
+          </div>
+        </div>
+      `).join('');
+      updateTotals();
+    }
+    function updateTotals() {
+      const subtotal = cart.reduce((a,b) => a + b.price * b.quantity, 0);
+      const shipping = getShipping(byId('distance').value);
+      const total = subtotal + shipping;
+      byId('subtotalValue').textContent = money(subtotal);
+      byId('shippingValue').textContent = money(shipping);
+      byId('totalValue').textContent = money(total);
+      byId('deliveryNote').textContent = getEstimate(byId('distance').value);
+      byId('estimateText').textContent = getEstimate(byId('distance').value);
+    }
+    function finishOrder() {
+      const name = byId('name').value.trim();
+      const phone = byId('phone').value.trim();
+      const address = byId('address').value.trim();
+      const district = byId('district').value.trim();
+      const distance = Number(byId('distance').value || 0);
+      const note = byId('note').value.trim();
+      const msg = byId('checkoutMessage');
+      if (!cart.length) { msg.innerHTML = `<div class="notice danger">Seu carrinho está vazio.</div>`; return; }
+      if (!name || !phone || !address) { msg.innerHTML = `<div class="notice danger">Preencha nome, WhatsApp e endereço.</div>`; return; }
+      const subtotal = cart.reduce((a,b) => a + b.price * b.quantity, 0);
+      const shipping = getShipping(distance);
+      const total = subtotal + shipping;
+      const order = {
+        id: 'PED-' + Date.now(),
+        createdAt: new Date().toLocaleString('pt-BR'),
+        customer: { name, phone, address, district, distance, note },
+        items: [...cart], subtotal, shipping, total,
+        estimate: getEstimate(distance), status: 'Recebido'
+      };
+      orders.unshift(order);
+      save('cabana_orders', orders);
+      cart = [];
+      save('cabana_cart', cart);
+      renderCart();
+      renderOrders();
+      renderStats();
+      const waText = encodeURIComponent(`Olá, fiz um pedido na Cabana do Surf.%0A%0APedido: ${order.id}%0ATotal: ${money(total)}%0ANome: ${name}%0AEndereço: ${address}%0ABairro: ${district}%0AObservações: ${note || '-'}%0A%0APagarei via Pix: ${settings.pix}`);
+      msg.innerHTML = `<div class="notice success">Pedido ${order.id} salvo com sucesso. <a style="text-decoration:underline" target="_blank" href="https://wa.me/${settings.whatsapp}?text=${waText}">Enviar pedido no WhatsApp</a></div>`;
+      ['name','phone','address','district','distance','note'].forEach(id => byId(id).value = '');
+      updateTotals();
+    }
+    function goAdminLogin() {
+      document.getElementById('adminLogin').scrollIntoView({behavior:'smooth'});
+    }
+    function loginAdmin() {
+      const pass = byId('adminPassword').value;
+      const msg = byId('adminLoginMessage');
+      if (pass === '1234') {
+        byId('adminPanel').style.display = 'block';
+        msg.innerHTML = `<div class="notice success">Painel liberado com sucesso.</div>`;
+        setTimeout(() => byId('adminPanel').scrollIntoView({behavior:'smooth'}), 150);
+      } else {
+        msg.innerHTML = `<div class="notice danger">Senha incorreta.</div>`;
+      }
+    }
+    function showTab(tab, el) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+      byId('tab-' + tab).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
+    function renderStats() {
+      byId('statRevenue').textContent = money(orders.reduce((a,b)=> a + b.total, 0));
+      byId('statOrders').textContent = String(orders.length);
+      byId('statProducts').textContent = String(products.length);
+      byId('statStock').textContent = String(products.reduce((a,b)=> a + Number(b.stock), 0));
+    }
+    function renderProductList() {
+      const list = byId('productList');
+      list.innerHTML = products.map(p => `
+        <div class="prod-row">
+          <img src="${p.image}" alt="${p.name}">
+          <div>
+            <strong>${p.name}</strong><br>
+            <span class="muted">${p.category} • ${p.brand}</span><br>
+            <span class="muted">Estoque: ${p.stock}</span>
+          </div>
+          <div>
+            <div class="price">${money(p.price)}</div>
+            <button class="mini-btn" onclick="deleteProduct(${p.id})">Excluir</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    function addProduct() {
+      const name = byId('pName').value.trim();
+      const brand = byId('pBrand').value.trim() || 'Cabana do Surf';
+      const category = byId('pCategory').value.trim() || 'Geral';
+      const price = Number(byId('pPrice').value || 0);
+      const stock = Number(byId('pStock').value || 0);
+      const sizes = (byId('pSizes').value || 'P,M,G,GG').split(',').map(s => s.trim()).filter(Boolean);
+      const image = byId('pImage').value.trim() || 'https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=1200&auto=format&fit=crop';
+      const description = byId('pDesc').value.trim() || 'Produto cadastrado no painel.';
+      if (!name || !price || !stock) return alert('Preencha nome, preço e estoque.');
+      products.unshift({ id: Date.now(), name, brand, category, price, stock, sizes, image, description });
+      save('cabana_products', products);
+      ['pName','pBrand','pCategory','pPrice','pStock','pSizes','pImage','pDesc'].forEach(id => byId(id).value = '');
+      renderProducts(); renderProductList(); renderStats();
+    }
+    function deleteProduct(id) {
+      products = products.filter(p => p.id !== id);
+      save('cabana_products', products);
+      renderProducts(); renderProductList(); renderStats();
+    }
+    function renderOrders() {
+      const holder = byId('ordersList');
+      if (!orders.length) { holder.innerHTML = '<div class="muted">Nenhum pedido ainda.</div>'; return; }
+      holder.innerHTML = orders.map(o => `
+        <div class="order">
+          <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <div>
+              <strong>${o.id}</strong><br>
+              <span class="muted">${o.createdAt}</span><br>
+              <span class="muted">${o.customer.name} • ${o.customer.phone}</span><br>
+              <span class="muted">${o.customer.address} - ${o.customer.district}</span>
+            </div>
+            <div>
+              <div class="price">${money(o.total)}</div>
+              <div class="badge">${o.status}</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;" class="muted">${o.items.map(i => `${i.quantity}x ${i.name}`).join(' • ')}</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+            <button class="mini-btn" onclick="setOrderStatus('${o.id}','Recebido')">Recebido</button>
+            <button class="mini-btn" onclick="setOrderStatus('${o.id}','Em separação')">Em separação</button>
+            <button class="mini-btn" onclick="setOrderStatus('${o.id}','Saiu para entrega')">Saiu para entrega</button>
+            <button class="mini-btn" onclick="setOrderStatus('${o.id}','Entregue')">Entregue</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    function setOrderStatus(id, status) {
+      const order = orders.find(o => o.id === id);
+      if (!order) return;
+      order.status = status;
+      save('cabana_orders', orders);
+      renderOrders();
+    }
+    function applySettings() {
+      byId('pixKey').textContent = settings.pix;
+      byId('whatsDisplay').textContent = settings.whatsappText;
+      byId('waBtn').href = `https://wa.me/${settings.whatsapp}`;
+      byId('sWhatsapp').value = settings.whatsappText;
+      byId('sPix').value = settings.pix;
+      byId('sFreeKm').value = settings.freeKm;
+      byId('sBusinessStart').value = settings.businessStart;
+      byId('sBusinessEnd').value = settings.businessEnd;
+      updateTotals();
+    }
+    function saveSettings() {
+      const text = byId('sWhatsapp').value.trim() || '(11) 99999-9999';
+      settings.whatsappText = text;
+      settings.whatsapp = text.replace(/\D/g, '');
+      settings.pix = byId('sPix').value.trim() || 'SEU-PIX-AQUI';
+      settings.freeKm = Number(byId('sFreeKm').value || 5);
+      settings.businessStart = Number(byId('sBusinessStart').value || 9);
+      settings.businessEnd = Number(byId('sBusinessEnd').value || 18);
+      save('cabana_settings', settings);
+      applySettings();
+      alert('Configurações salvas.');
+    }
+    renderProducts();
+    renderCart();
+    renderProductList();
+    renderOrders();
+    renderStats();
+    applySettings();
+  </script>
+</body>
+</html>
