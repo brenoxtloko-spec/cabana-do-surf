@@ -276,9 +276,11 @@
       <div class="container">
         <div class="section-head"><div><h2>Painel administrativo</h2><div class="muted">Senha padrão: 1234</div></div></div>
         <div class="checkout-box" style="padding:18px; max-width:520px;">
-          <input id="adminPassword" type="password" placeholder="Digite a senha do painel" />
+          <input id="adminEmail" type="email" placeholder="E-mail do administrador" autocomplete="username" />
+          <input id="adminPassword" type="password" placeholder="Senha do administrador" autocomplete="current-password" style="margin-top:10px;" />
           <div style="margin-top:12px; display:flex; gap:12px;">
             <button class="btn" onclick="loginAdmin()">Entrar</button>
+            <button class="btn secondary" onclick="logoutAdmin()">Sair</button>
           </div>
           <div id="adminLoginMessage" style="margin-top:12px;"></div>
         </div>
@@ -315,7 +317,8 @@
                 <input id="pPrice" type="number" placeholder="Preço" />
                 <input id="pStock" type="number" placeholder="Estoque" />
                 <input id="pSizes" placeholder="Tamanhos ex: P,M,G,GG" />
-                <input id="pImage" placeholder="Link da imagem" />
+                <label class="muted" for="pImage">Foto do produto (JPG, PNG ou WEBP)</label>
+                <input id="pImage" type="file" accept="image/*" />
                 <textarea id="pDesc" rows="4" placeholder="Descrição"></textarea>
                 <button class="btn" onclick="addProduct()">Salvar produto</button>
               </div>
@@ -349,7 +352,8 @@
             </div>
             <div class="admin-box" style="padding:18px;">
               <h3 style="margin-top:0">Instruções</h3>
-              <p class="muted">Altere WhatsApp, Pix, frete grátis e horário comercial. Tudo fica salvo no navegador.</p>
+              <p class="muted">Altere WhatsApp, Pix, frete grátis e horário comercial. Essas configurações continuam salvas neste navegador.</p>
+              <p class="muted">Produtos e fotos ficam no Supabase e aparecem para todos os clientes.</p>
             </div>
           </div>
         </div>
@@ -360,16 +364,15 @@
   <a class="wa" id="waBtn" href="https://wa.me/5524998251902" target="_blank" title="WhatsApp">☎</a>
 
   <footer>
-    <div class="container">Cabana do Surf • Loja online completa • Admin senha padrão: 1234</div>
+    <div class="container">Cabana do Surf • Catálogo online</div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const DEFAULT_PRODUCTS = [
-      { id: 1, name: 'Camiseta Premium Off White', brand: 'Cabana do Surf', category: 'Camisetas', price: 89.9, stock: 12, sizes: ['P','M','G','GG'], image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=1200&auto=format&fit=crop', description: 'Peça masculina premium com visual moderno e ótimo caimento.' },
-      { id: 2, name: 'Camisa Polo Surf Wear Azul', brand: 'Cabana do Surf', category: 'Casual', price: 149.9, stock: 8, sizes: ['M','G','GG'], image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1200&auto=format&fit=crop', description: 'Camisa polo masculina estilosa para usar no dia a dia.' },
-      { id: 3, name: 'Tênis Casual Masculino Wave', brand: 'Cabana do Surf', category: 'Tênis', price: 299.9, stock: 5, sizes: ['39','40','41','42'], image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1200&auto=format&fit=crop', description: 'Tênis casual masculino com design versátil e confortável.' },
-      { id: 4, name: 'Bermuda Dry Fit Preta', brand: 'Cabana do Surf', category: 'Academia', price: 99.9, stock: 15, sizes: ['M','G','GG'], image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop', description: 'Bermuda leve, confortável e ideal para treino ou casual.' }
-    ];
+    const SUPABASE_URL = "https://jorbokleoepfyqvrvsjo.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_qOGZP0OR4I4ScjtwRiMtw_G1dt6PKV";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const DEFAULT_SETTINGS = {
       whatsapp: '5524998251902',
@@ -380,17 +383,24 @@
       businessEnd: 18
     };
 
-    let products = load('cabana_products', DEFAULT_PRODUCTS);
+    let products = [];
     let cart = load('cabana_cart', []);
     let orders = load('cabana_orders', []);
     let settings = load('cabana_settings', DEFAULT_SETTINGS);
+    let adminUser = null;
 
     function load(key, fallback) {
-      try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch(e) { return fallback; }
+      try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+      catch(e) { return fallback; }
     }
     function save(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
-    function money(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+    function money(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
     function byId(id) { return document.getElementById(id); }
+    function safe(value) {
+      return String(value ?? '').replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[c]));
+    }
     function getShipping(distance) {
       const d = Number(distance || 0);
       if (!d) return 0;
@@ -408,64 +418,98 @@
       }
       return 'Pedido fora do horário comercial: envio no próximo período disponível';
     }
+
+    async function fetchProducts() {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id,name,price,category,sizes,color,image_url,tag,active,brand,stock,description,created_at')
+        .eq('active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao carregar produtos:', error);
+        byId('productsGrid').innerHTML = '<div class="notice danger">Não foi possível carregar os produtos. Confira a conexão com o Supabase.</div>';
+        return;
+      }
+      products = (data || []).map(p => ({
+        ...p,
+        price: Number(p.price || 0),
+        stock: Number(p.stock || 0),
+        sizes: String(p.sizes || '').split(',').map(s => s.trim()).filter(Boolean),
+        image: p.image_url || '',
+        brand: p.brand || 'Cabana do Surf',
+        description: p.description || '',
+        category: p.category || 'Geral'
+      }));
+      renderProducts();
+      renderProductList();
+      renderStats();
+    }
+
     function populateCategories() {
       const select = byId('categoryFilter');
       const current = select.value;
       const cats = ['Todos', ...new Set(products.map(p => p.category))];
-      select.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+      select.innerHTML = cats.map(c => `<option value="${safe(c)}">${safe(c)}</option>`).join('');
       select.value = cats.includes(current) ? current : 'Todos';
     }
+
     function renderProducts() {
       populateCategories();
       let list = [...products];
-      const q = byId('searchInput').value.toLowerCase();
+      const q = byId('searchInput').value.toLowerCase().trim();
       const c = byId('categoryFilter').value;
       const s = byId('sortFilter').value;
-      if (q) list = list.filter(p => `${p.name} ${p.brand} ${p.category}`.toLowerCase().includes(q));
+      if (q) list = list.filter(p => `${p.name} ${p.brand} ${p.category} ${p.color || ''}`.toLowerCase().includes(q));
       if (c !== 'Todos') list = list.filter(p => p.category === c);
       if (s === 'low') list.sort((a,b) => a.price - b.price);
       if (s === 'high') list.sort((a,b) => b.price - a.price);
+      if (!list.length) {
+        byId('productsGrid').innerHTML = '<div class="notice">Nenhum produto disponível nesta categoria no momento.</div>';
+        return;
+      }
       byId('productsGrid').innerHTML = list.map(p => `
         <div class="card">
-          <img src="${p.image}" alt="${p.name}">
+          <img src="${safe(p.image || 'https://placehold.co/600x700/171717/d4a64a?text=Cabana+do+Surf')}" alt="${safe(p.name)}">
           <div class="card-body">
             <div style="display:flex; justify-content:space-between; gap:8px; align-items:start;">
               <div>
-                <div class="badge">${p.category}</div>
-                <h3 style="margin:10px 0 6px;">${p.name}</h3>
-                <div class="muted">${p.brand}</div>
+                <div class="badge">${safe(p.category)}</div>
+                <h3 style="margin:10px 0 6px;">${safe(p.name)}</h3>
+                <div class="muted">${safe(p.brand)}</div>
               </div>
-              <div class="badge">${p.stock} em estoque</div>
+              ${p.tag ? `<div class="badge">${safe(p.tag)}</div>` : ''}
             </div>
-            <p class="muted">${p.description}</p>
-            <div class="sizes">${p.sizes.map(s => `<span class="size">${s}</span>`).join('')}</div>
+            <p class="muted">${safe(p.description || p.color || '')}</p>
+            <div class="sizes">${p.sizes.map(size => `<span class="size">${safe(size)}</span>`).join('')}</div>
             <div class="price-row">
               <div class="price">${money(p.price)}</div>
-              <button class="btn" onclick="addToCart(${p.id})">Adicionar</button>
+              <button class="btn" onclick="addToCart('${safe(p.id)}')">Consultar</button>
             </div>
           </div>
         </div>
       `).join('');
     }
+
     function addToCart(id) {
-      const p = products.find(x => x.id === id);
+      const p = products.find(x => String(x.id) === String(id));
       if (!p) return;
-      const found = cart.find(i => i.id === id);
+      const found = cart.find(i => String(i.id) === String(id));
       if (found) found.quantity += 1;
       else cart.push({ ...p, quantity: 1 });
       save('cabana_cart', cart);
       renderCart();
     }
     function changeQty(id, delta) {
-      const item = cart.find(i => i.id === id);
+      const item = cart.find(i => String(i.id) === String(id));
       if (!item) return;
       item.quantity += delta;
-      if (item.quantity <= 0) cart = cart.filter(i => i.id !== id);
+      if (item.quantity <= 0) cart = cart.filter(i => String(i.id) !== String(id));
       save('cabana_cart', cart);
       renderCart();
     }
     function removeItem(id) {
-      cart = cart.filter(i => i.id !== id);
+      cart = cart.filter(i => String(i.id) !== String(id));
       save('cabana_cart', cart);
       renderCart();
     }
@@ -474,33 +518,31 @@
       byId('emptyCart').style.display = cart.length ? 'none' : 'block';
       holder.innerHTML = cart.map(i => `
         <div class="cart-item">
-          <img src="${i.image}" alt="${i.name}">
+          <img src="${safe(i.image)}" alt="${safe(i.name)}">
           <div>
-            <strong>${i.name}</strong><br>
+            <strong>${safe(i.name)}</strong><br>
             <span class="muted">${money(i.price)}</span>
             <div class="qty">
-              <button class="mini-btn" onclick="changeQty(${i.id}, -1)">-</button>
+              <button class="mini-btn" onclick="changeQty('${safe(i.id)}', -1)">-</button>
               <strong>${i.quantity}</strong>
-              <button class="mini-btn" onclick="changeQty(${i.id}, 1)">+</button>
+              <button class="mini-btn" onclick="changeQty('${safe(i.id)}', 1)">+</button>
             </div>
           </div>
-          <div>
-            <button class="mini-btn" onclick="removeItem(${i.id})">Excluir</button>
-          </div>
+          <div><button class="mini-btn" onclick="removeItem('${safe(i.id)}')">Excluir</button></div>
         </div>
       `).join('');
       updateTotals();
     }
     function updateTotals() {
-      const subtotal = cart.reduce((a,b) => a + b.price * b.quantity, 0);
+      const subtotal = cart.reduce((a,b) => a + Number(b.price) * b.quantity, 0);
       const shipping = getShipping(byId('distance').value);
-      const total = subtotal + shipping;
       byId('subtotalValue').textContent = money(subtotal);
       byId('shippingValue').textContent = money(shipping);
-      byId('totalValue').textContent = money(total);
+      byId('totalValue').textContent = money(subtotal + shipping);
       byId('deliveryNote').textContent = getEstimate(byId('distance').value);
       byId('estimateText').textContent = getEstimate(byId('distance').value);
     }
+
     function finishOrder() {
       const name = byId('name').value.trim();
       const phone = byId('phone').value.trim();
@@ -509,9 +551,9 @@
       const distance = Number(byId('distance').value || 0);
       const note = byId('note').value.trim();
       const msg = byId('checkoutMessage');
-      if (!cart.length) { msg.innerHTML = `<div class="notice danger">Seu carrinho está vazio.</div>`; return; }
-      if (!name || !phone || !address) { msg.innerHTML = `<div class="notice danger">Preencha nome, WhatsApp e endereço.</div>`; return; }
-      const subtotal = cart.reduce((a,b) => a + b.price * b.quantity, 0);
+      if (!cart.length) { msg.innerHTML = '<div class="notice danger">Seu carrinho está vazio.</div>'; return; }
+      if (!name || !phone || !address) { msg.innerHTML = '<div class="notice danger">Preencha nome, WhatsApp e endereço.</div>'; return; }
+      const subtotal = cart.reduce((a,b) => a + Number(b.price) * b.quantity, 0);
       const shipping = getShipping(distance);
       const total = subtotal + shipping;
       const order = {
@@ -528,97 +570,139 @@
       renderCart();
       renderOrders();
       renderStats();
-      const waText = encodeURIComponent(`Olá, fiz um pedido na Cabana do Surf.%0A%0APedido: ${order.id}%0ATotal: ${money(total)}%0ANome: ${name}%0AEndereço: ${address}%0ABairro: ${district}%0AObservações: ${note || '-'}%0A%0APagarei via Pix: ${settings.pix}`);
-      msg.innerHTML = `<div class="notice success">Pedido ${order.id} salvo com sucesso. <a style="text-decoration:underline" target="_blank" href="https://wa.me/${settings.whatsapp}?text=${waText}">Enviar pedido no WhatsApp</a></div>`;
+      const lines = order.items.map(i => `${i.quantity}x ${i.name} - ${money(i.price)}`).join('\n');
+      const text = `Olá, fiz um pedido na Cabana do Surf.\nPedido: ${order.id}\n${lines}\nTotal: ${money(total)}\nNome: ${name}\nWhatsApp: ${phone}\nEndereço: ${address}\nBairro: ${district}\nObservações: ${note || '-'}\nPagamento via Pix: ${settings.pix}`;
+      msg.innerHTML = `<div class="notice success">Pedido preparado. <a style="text-decoration:underline" target="_blank" rel="noopener" href="https://wa.me/${safe(settings.whatsapp)}?text=${encodeURIComponent(text)}">Enviar pedido no WhatsApp</a></div>`;
       ['name','phone','address','district','distance','note'].forEach(id => byId(id).value = '');
       updateTotals();
     }
+
     function goAdminLogin() {
-      document.getElementById('adminLogin').scrollIntoView({behavior:'smooth'});
+      byId('adminLogin').scrollIntoView({ behavior: 'smooth' });
     }
-    function loginAdmin() {
-      const pass = byId('adminPassword').value;
+    async function loginAdmin() {
+      const email = byId('adminEmail').value.trim();
+      const password = byId('adminPassword').value;
       const msg = byId('adminLoginMessage');
-      if (pass === '1234') {
-        byId('adminPanel').style.display = 'block';
-        msg.innerHTML = `<div class="notice success">Painel liberado com sucesso.</div>`;
-        setTimeout(() => byId('adminPanel').scrollIntoView({behavior:'smooth'}), 150);
-      } else {
-        msg.innerHTML = `<div class="notice danger">Senha incorreta.</div>`;
+      if (!email || !password) {
+        msg.innerHTML = '<div class="notice danger">Digite seu e-mail e sua senha.</div>';
+        return;
       }
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        msg.innerHTML = `<div class="notice danger">${safe(error.message)}</div>`;
+        return;
+      }
+      adminUser = data.user;
+      byId('adminPanel').style.display = 'block';
+      msg.innerHTML = '<div class="notice success">Login realizado com sucesso.</div>';
+      await fetchProducts();
+      renderOrders(); renderStats(); applySettings();
+      setTimeout(() => byId('adminPanel').scrollIntoView({ behavior: 'smooth' }), 150);
+    }
+    async function logoutAdmin() {
+      await supabase.auth.signOut();
+      adminUser = null;
+      byId('adminPanel').style.display = 'none';
+      byId('adminLoginMessage').innerHTML = '<div class="notice">Você saiu do painel.</div>';
     }
     function showTab(tab, el) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
       byId('tab-' + tab).classList.remove('hidden');
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       el.classList.add('active');
+      if (tab === 'products') renderProductList();
+      if (tab === 'orders') renderOrders();
     }
     function renderStats() {
-      byId('statRevenue').textContent = money(orders.reduce((a,b)=> a + b.total, 0));
+      byId('statRevenue').textContent = money(orders.reduce((a,b)=> a + Number(b.total || 0), 0));
       byId('statOrders').textContent = String(orders.length);
       byId('statProducts').textContent = String(products.length);
-      byId('statStock').textContent = String(products.reduce((a,b)=> a + Number(b.stock), 0));
+      byId('statStock').textContent = String(products.reduce((a,b)=> a + Number(b.stock || 0), 0));
     }
     function renderProductList() {
       const list = byId('productList');
+      if (!products.length) {
+        list.innerHTML = '<div class="muted">Nenhum produto cadastrado. Adicione o primeiro ao lado.</div>';
+        return;
+      }
       list.innerHTML = products.map(p => `
         <div class="prod-row">
-          <img src="${p.image}" alt="${p.name}">
+          <img src="${safe(p.image)}" alt="${safe(p.name)}">
           <div>
-            <strong>${p.name}</strong><br>
-            <span class="muted">${p.category} • ${p.brand}</span><br>
-            <span class="muted">Estoque: ${p.stock}</span>
+            <strong>${safe(p.name)}</strong><br>
+            <span class="muted">${safe(p.category)} • ${safe(p.brand)}</span><br>
+            <span class="muted">Estoque: ${Number(p.stock || 0)}</span>
           </div>
           <div>
             <div class="price">${money(p.price)}</div>
-            <button class="mini-btn" onclick="deleteProduct(${p.id})">Excluir</button>
+            <button class="mini-btn" onclick="deleteProduct('${safe(p.id)}')">Retirar do catálogo</button>
           </div>
         </div>
       `).join('');
     }
-    function addProduct() {
+
+    async function addProduct() {
+      if (!adminUser) return alert('Entre no painel com seu login antes de cadastrar produtos.');
       const name = byId('pName').value.trim();
       const brand = byId('pBrand').value.trim() || 'Cabana do Surf';
       const category = byId('pCategory').value.trim() || 'Geral';
       const price = Number(byId('pPrice').value || 0);
       const stock = Number(byId('pStock').value || 0);
-      const sizes = (byId('pSizes').value || 'P,M,G,GG').split(',').map(s => s.trim()).filter(Boolean);
-      const image = byId('pImage').value.trim() || 'https://images.unsplash.com/photo-1445205170230-053b83016050?q=80&w=1200&auto=format&fit=crop';
-      const description = byId('pDesc').value.trim() || 'Produto cadastrado no painel.';
-      if (!name || !price || !stock) return alert('Preencha nome, preço e estoque.');
-      products.unshift({ id: Date.now(), name, brand, category, price, stock, sizes, image, description });
-      save('cabana_products', products);
+      const sizes = (byId('pSizes').value || 'P,M,G,GG').split(',').map(s => s.trim()).filter(Boolean).join(', ');
+      const description = byId('pDesc').value.trim();
+      const file = byId('pImage').files[0];
+      if (!name || price <= 0) return alert('Preencha nome e preço válido.');
+      let image_url = '';
+      if (file) {
+        if (!file.type.startsWith('image/')) return alert('Escolha um arquivo de imagem.');
+        const extension = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const path = `${Date.now()}-${crypto.randomUUID()}.${extension}`;
+        const { error: uploadError } = await supabase.storage.from('produtos').upload(path, file, {
+          cacheControl: '3600', upsert: false, contentType: file.type
+        });
+        if (uploadError) return alert('Erro ao enviar foto: ' + uploadError.message);
+        image_url = supabase.storage.from('produtos').getPublicUrl(path).data.publicUrl;
+      }
+      const { error } = await supabase.from('products').insert({
+        name, brand, category, price, stock, sizes, description,
+        color: '', image_url, tag: '', active: true
+      });
+      if (error) return alert('Erro ao salvar produto: ' + error.message);
       ['pName','pBrand','pCategory','pPrice','pStock','pSizes','pImage','pDesc'].forEach(id => byId(id).value = '');
-      renderProducts(); renderProductList(); renderStats();
+      await fetchProducts();
+      alert('Produto cadastrado e publicado no catálogo!');
     }
-    function deleteProduct(id) {
-      products = products.filter(p => p.id !== id);
-      save('cabana_products', products);
-      renderProducts(); renderProductList(); renderStats();
+
+    async function deleteProduct(id) {
+      if (!adminUser) return alert('Faça login novamente.');
+      if (!confirm('Retirar este produto do catálogo?')) return;
+      const { error } = await supabase.from('products').update({ active: false }).eq('id', id);
+      if (error) return alert('Não foi possível retirar o produto: ' + error.message);
+      await fetchProducts();
+      alert('Produto retirado do catálogo.');
     }
+
     function renderOrders() {
       const holder = byId('ordersList');
-      if (!orders.length) { holder.innerHTML = '<div class="muted">Nenhum pedido ainda.</div>'; return; }
+      if (!orders.length) { holder.innerHTML = '<div class="muted">Nenhum pedido registrado neste navegador.</div>'; return; }
       holder.innerHTML = orders.map(o => `
         <div class="order">
           <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
             <div>
-              <strong>${o.id}</strong><br>
-              <span class="muted">${o.createdAt}</span><br>
-              <span class="muted">${o.customer.name} • ${o.customer.phone}</span><br>
-              <span class="muted">${o.customer.address} - ${o.customer.district}</span>
+              <strong>${safe(o.id)}</strong><br>
+              <span class="muted">${safe(o.createdAt)}</span><br>
+              <span class="muted">${safe(o.customer.name)} • ${safe(o.customer.phone)}</span><br>
+              <span class="muted">${safe(o.customer.address)} - ${safe(o.customer.district)}</span>
             </div>
-            <div>
-              <div class="price">${money(o.total)}</div>
-              <div class="badge">${o.status}</div>
-            </div>
+            <div><div class="price">${money(o.total)}</div><div class="badge">${safe(o.status)}</div></div>
           </div>
-          <div style="margin-top:10px;" class="muted">${o.items.map(i => `${i.quantity}x ${i.name}`).join(' • ')}</div>
+          <div style="margin-top:10px;" class="muted">${o.items.map(i => `${i.quantity}x ${safe(i.name)}`).join(' • ')}</div>
           <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
-            <button class="mini-btn" onclick="setOrderStatus('${o.id}','Recebido')">Recebido</button>
-            <button class="mini-btn" onclick="setOrderStatus('${o.id}','Em separação')">Em separação</button>
-            <button class="mini-btn" onclick="setOrderStatus('${o.id}','Saiu para entrega')">Saiu para entrega</button>
-            <button class="mini-btn" onclick="setOrderStatus('${o.id}','Entregue')">Entregue</button>
+            <button class="mini-btn" onclick="setOrderStatus('${safe(o.id)}','Recebido')">Recebido</button>
+            <button class="mini-btn" onclick="setOrderStatus('${safe(o.id)}','Em separação')">Em separação</button>
+            <button class="mini-btn" onclick="setOrderStatus('${safe(o.id)}','Saiu para entrega')">Saiu para entrega</button>
+            <button class="mini-btn" onclick="setOrderStatus('${safe(o.id)}','Entregue')">Entregue</button>
           </div>
         </div>
       `).join('');
@@ -651,14 +735,28 @@
       settings.businessEnd = Number(byId('sBusinessEnd').value || 18);
       save('cabana_settings', settings);
       applySettings();
-      alert('Configurações salvas.');
+      alert('Configurações salvas neste navegador.');
     }
-    renderProducts();
-    renderCart();
-    renderProductList();
-    renderOrders();
-    renderStats();
-    applySettings();
+
+    async function init() {
+      renderCart();
+      renderOrders();
+      renderStats();
+      applySettings();
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        adminUser = data.session.user;
+        byId('adminPanel').style.display = 'block';
+        byId('adminLoginMessage').innerHTML = '<div class="notice success">Sessão administrativa ativa.</div>';
+      }
+      await fetchProducts();
+      renderProductList();
+    }
+    supabase.auth.onAuthStateChange((_event, session) => {
+      adminUser = session?.user || null;
+      if (!adminUser) byId('adminPanel').style.display = 'none';
+    });
+    init();
   </script>
 </body>
 </html>
