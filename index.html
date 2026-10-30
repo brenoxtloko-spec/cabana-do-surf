@@ -369,9 +369,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const SUPABASE_URL = "https://jorbokleoepfyqvrvsjo.supabase.co";
+    const SUPABASE_URL = "https://jorbokleoepfyqvrvsjo.supabaseClient.co";
     const SUPABASE_KEY = "sb_publishable_qOGZP0OR4I74ScjtwRiMtw_G1dt6PKV";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const DEFAULT_SETTINGS = {
       whatsapp: '5524998251902',
@@ -587,7 +587,7 @@
         msg.innerHTML = '<div class="notice danger">Digite seu e-mail e sua senha.</div>';
         return;
       }
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
       if (error) {
         msg.innerHTML = `<div class="notice danger">${safe(error.message)}</div>`;
         return;
@@ -600,7 +600,7 @@
       setTimeout(() => byId('adminPanel').scrollIntoView({ behavior: 'smooth' }), 150);
     }
     async function logoutAdmin() {
-      await supabase.auth.signOut();
+      await supabaseClient.auth.signOut();
       adminUser = null;
       byId('adminPanel').style.display = 'none';
       byId('adminLoginMessage').innerHTML = '<div class="notice">Você saiu do painel.</div>';
@@ -657,13 +657,13 @@
         if (!file.type.startsWith('image/')) return alert('Escolha um arquivo de imagem.');
         const extension = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
         const path = `${Date.now()}-${crypto.randomUUID()}.${extension}`;
-        const { error: uploadError } = await supabase.storage.from('produtos').upload(path, file, {
+        const { error: uploadError } = await supabaseClient.storage.from('produtos').upload(path, file, {
           cacheControl: '3600', upsert: false, contentType: file.type
         });
         if (uploadError) return alert('Erro ao enviar foto: ' + uploadError.message);
-        image_url = supabase.storage.from('produtos').getPublicUrl(path).data.publicUrl;
+        image_url = supabaseClient.storage.from('produtos').getPublicUrl(path).data.publicUrl;
       }
-      const { error } = await supabase.from('products').insert({
+      const { error } = await supabaseClient.from('products').insert({
         name, brand, category, price, stock, sizes, description,
         color: '', image_url, tag: '', active: true
       });
@@ -676,7 +676,7 @@
     async function deleteProduct(id) {
       if (!adminUser) return alert('Faça login novamente.');
       if (!confirm('Retirar este produto do catálogo?')) return;
-      const { error } = await supabase.from('products').update({ active: false }).eq('id', id);
+      const { error } = await supabaseClient.from('products').update({ active: false }).eq('id', id);
       if (error) return alert('Não foi possível retirar o produto: ' + error.message);
       await fetchProducts();
       alert('Produto retirado do catálogo.');
@@ -742,7 +742,7 @@
       renderOrders();
       renderStats();
       applySettings();
-      const { data } = await supabase.auth.getSession();
+      const { data } = await supabaseClient.auth.getSession();
       if (data.session) {
         adminUser = data.session.user;
         byId('adminPanel').style.display = 'block';
@@ -751,7 +751,7 @@
       await fetchProducts();
       renderProductList();
     }
-    supabase.auth.onAuthStateChange((_event, session) => {
+    supabaseClient.auth.onAuthStateChange((_event, session) => {
       adminUser = session?.user || null;
       if (!adminUser) byId('adminPanel').style.display = 'none';
     });
