@@ -108,7 +108,16 @@
             <input id="pSizes" placeholder="Tamanhos separados por vírgula: P,M,G,GG">
             <small class="muted">Exemplo: categoria CAMISAS PREMIUM e tamanhos M,G,GG. O catálogo separa os produtos automaticamente por tamanho.</small>
             <input id="pColor" placeholder="Cor">
-            <label class="muted">Foto do produto (JPG, PNG ou WEBP)<input id="pImage" type="file" accept="image/jpeg,image/png,image/webp" style="margin-top:7px"></label>
+            <label class="muted">Foto de um produto (JPG, PNG ou WEBP)<input id="pImage" type="file" accept="image/jpeg,image/png,image/webp" style="margin-top:7px"></label>
+            <div class="admin-box" style="grid-column:1/-1">
+              <h4 style="margin:0 0 8px">Cadastrar várias fotos de uma vez</h4>
+              <p class="muted">Escolha várias fotos. Cada foto será cadastrada como um produto separado, usando a categoria, preço, tamanhos e estoque preenchidos acima. O nome será baseado no nome do arquivo; depois você pode editar cada produto individualmente.</p>
+              <label class="muted">Selecionar várias fotos
+                <input id="pImagesBulk" type="file" accept="image/jpeg,image/png,image/webp" multiple style="margin-top:7px">
+              </label>
+              <button class="btn secondary" id="bulkSaveButton" type="button">Cadastrar todas as fotos selecionadas</button>
+              <div id="bulkStatus" class="status"></div>
+            </div>
             <textarea id="pDesc" rows="3" placeholder="Descrição (opcional)"></textarea>
             <button class="btn" id="saveProductButton" type="submit">Salvar produto</button>
             <button class="btn secondary hidden" id="cancelEditButton" type="button">Cancelar edição</button>
@@ -298,6 +307,53 @@
     $('cancelEditButton').classList.add('hidden');
     clearStatus('productStatus');
   }
+  async function saveBulkProducts() {
+    clearStatus('bulkStatus');
+    const files = Array.from($('pImagesBulk').files || []);
+    if (!files.length) {
+      showStatus('bulkStatus','Selecione pelo menos uma foto.','error');
+      return;
+    }
+    const category = $('pCategory').value.trim();
+    const price = Number($('pPrice').value);
+    const stock = Number($('pStock').value);
+    if (!category || !Number.isFinite(price) || price <= 0 || !Number.isInteger(stock) || stock < 0) {
+      showStatus('bulkStatus','Preencha categoria, preço e estoque antes de cadastrar as fotos.','error');
+      return;
+    }
+    const button=$('bulkSaveButton');
+    button.disabled=true;
+    let created=0;
+    try {
+      for (let i=0;i<files.length;i++) {
+        const file=files[i];
+        const imageUrl=await uploadPhoto(file);
+        const filename=file.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim();
+        const product={
+          name:filename || `Produto ${i+1}`,
+          brand:$('pBrand').value.trim() || 'Cabana do Surf',
+          category, price, stock,
+          sizes:$('pSizes').value.trim(),
+          color:$('pColor').value.trim(),
+          description:$('pDesc').value.trim(),
+          image_url:imageUrl,
+          active:true
+        };
+        const result=await db.from('products').insert(product);
+        if(result.error) throw new Error(`Erro na foto "${file.name}": ${result.error.message}`);
+        created++;
+        showStatus('bulkStatus',`Cadastrando... ${created} de ${files.length} fotos`,'ok');
+      }
+      $('pImagesBulk').value='';
+      showStatus('bulkStatus',`${created} produto(s) cadastrado(s)! Você pode editar ou excluir cada um individualmente na lista de produtos.`,'ok');
+      await Promise.all([loadCatalog(),loadAdminProducts()]);
+    } catch(error) {
+      showStatus('bulkStatus',`Foram cadastrados ${created} de ${files.length}. ${error.message || error}`,'error');
+      await Promise.all([loadCatalog(),loadAdminProducts()]);
+    } finally {
+      button.disabled=false;
+    }
+  }
   async function saveProduct(event) {
     event.preventDefault();
     clearStatus('productStatus');
@@ -409,6 +465,7 @@
     });
     $('logoutButton').addEventListener('click',signOut);
     $('productForm').addEventListener('submit',saveProduct);
+    $('bulkSaveButton').addEventListener('click',saveBulkProducts);
     $('cancelEditButton').addEventListener('click',resetProductForm);
     $('adminProductList').addEventListener('click',event=>{
       const edit=event.target.closest('[data-edit]');
