@@ -18,7 +18,13 @@
     .panel,.card,.admin-box{background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.01));border:1px solid var(--border);border-radius:22px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
     .hero-card{padding:20px;display:grid;gap:12px}.feature{padding:16px;border-radius:16px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06)}.muted{color:var(--muted)}
     section{padding:28px 0}.section-head{display:flex;justify-content:space-between;align-items:end;gap:15px;margin-bottom:18px}.section-head h2{font: bold 32px Georgia,serif;margin:0}
-    .filters{display:grid;grid-template-columns:1fr 240px;gap:12px;margin-bottom:20px}
+    .filters{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:16px}
+    .category-nav,.size-nav{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0}
+    .nav-chip{padding:10px 15px;border:1px solid var(--border);border-radius:999px;background:#111;color:var(--text);cursor:pointer;font-weight:700}
+    .nav-chip.active{background:var(--gold);color:#171108;border-color:var(--gold)}
+    .catalog-back{margin:4px 0 12px}
+    .catalog-subtitle{color:var(--muted);margin:6px 0 10px}
+    #categoryFilter{display:none}
     input,select,textarea{width:100%;padding:13px 14px;border-radius:13px;border:1px solid var(--border);background:#111;color:var(--text);outline:none}
     input:focus,select:focus,textarea:focus{border-color:var(--gold)}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:17px}
     .card{overflow:hidden}.card img{width:100%;height:270px;object-fit:cover;background:#191919;display:block}.card-body{padding:15px}.card h3{margin:10px 0 7px;font-size:17px}.price{font-size:22px;font-weight:800;color:var(--gold)}.sizes{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.size{font-size:12px;padding:6px 9px;border:1px solid rgba(255,255,255,.14);border-radius:20px}
@@ -60,6 +66,16 @@
       <input id="searchInput" type="search" placeholder="Buscar produto, marca ou categoria...">
       <select id="categoryFilter"><option value="">Todas as categorias</option></select>
     </div>
+    <div id="categoryNavigation">
+      <div class="catalog-subtitle">Escolha uma categoria para começar:</div>
+      <div id="categoryButtons" class="category-nav"></div>
+    </div>
+    <div id="sizeNavigation" class="hidden">
+      <button id="backCategories" class="btn secondary catalog-back" type="button">← Todas as categorias</button>
+      <div class="catalog-subtitle" id="selectedCategoryTitle"></div>
+      <div class="catalog-subtitle">Agora escolha o tamanho:</div>
+      <div id="sizeButtons" class="size-nav"></div>
+    </div>
     <div id="productsGrid" class="grid"><div class="empty">Carregando produtos...</div></div>
   </div></section>
 
@@ -90,6 +106,7 @@
             <input id="pPrice" type="number" min="0" step="0.01" placeholder="Preço (R$)" required>
             <input id="pStock" type="number" min="0" step="1" placeholder="Estoque" value="1" required>
             <input id="pSizes" placeholder="Tamanhos separados por vírgula: P,M,G,GG">
+            <small class="muted">Exemplo: categoria CAMISAS PREMIUM e tamanhos M,G,GG. O catálogo separa os produtos automaticamente por tamanho.</small>
             <input id="pColor" placeholder="Cor">
             <label class="muted">Foto do produto (JPG, PNG ou WEBP)<input id="pImage" type="file" accept="image/jpeg,image/png,image/webp" style="margin-top:7px"></label>
             <textarea id="pDesc" rows="3" placeholder="Descrição (opcional)"></textarea>
@@ -130,6 +147,8 @@
   let currentUser = null;
   let allProducts = [];
   let editingId = null;
+  let selectedCategory = '';
+  let selectedSize = '';
 
   function showStatus(id, message, type='error') {
     const el = $(id);
@@ -172,27 +191,60 @@
       return;
     }
     allProducts = (data || []).map(normalizeProduct);
+    renderCategoryNavigation();
+    if(selectedCategory && !allProducts.some(p=>p.category===selectedCategory)) {
+      selectedCategory=''; selectedSize='';
+      $('sizeNavigation').classList.add('hidden');
+      $('categoryNavigation').classList.remove('hidden');
+    }
+    if(selectedCategory) openCategory(selectedCategory);
+    else {
+      $('productsGrid').innerHTML='<div class="empty">Escolha uma categoria para ver os produtos.</div>';
+      $('productCount').textContent=`${allProducts.length} produto(s)`;
+    }
+  }
+  function productSizes(product) {
+    return String(product.sizes || '').split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
+  }
+  function renderCategoryNavigation() {
+    const categories = [...new Set(allProducts.map(p=>p.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    $('categoryButtons').innerHTML = categories.length
+      ? categories.map(c=>`<button type="button" class="nav-chip" data-category="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('')
+      : '<div class="empty">Ainda não há categorias cadastradas.</div>';
+  }
+  function openCategory(category) {
+    selectedCategory = category;
+    selectedSize = '';
+    $('categoryNavigation').classList.add('hidden');
+    $('sizeNavigation').classList.remove('hidden');
+    $('selectedCategoryTitle').textContent = category;
+    const products = allProducts.filter(p=>p.category===category);
+    const sizes = [...new Set(products.flatMap(productSizes))].sort((a,b)=>{
+      const order=['PP','P','M','G','GG','XG','XGG','XXG','3G','4G','5G'];
+      const ai=order.indexOf(a), bi=order.indexOf(b);
+      return (ai<0?99:ai)-(bi<0?99:bi) || a.localeCompare(b,'pt-BR');
+    });
+    $('sizeButtons').innerHTML = `<button type="button" class="nav-chip active" data-size="">Todos</button>` +
+      sizes.map(s=>`<button type="button" class="nav-chip" data-size="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join('');
     renderCatalog();
   }
   function renderCatalog() {
     const query = $('searchInput').value.trim().toLowerCase();
-    const category = $('categoryFilter').value;
-    const categories = [...new Set(allProducts.map(p=>p.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-    const oldValue = category;
-    $('categoryFilter').innerHTML = '<option value="">Todas as categorias</option>' + categories.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-    $('categoryFilter').value = categories.includes(oldValue) ? oldValue : '';
+    const category = selectedCategory;
+    const size = selectedSize;
     const filtered = allProducts.filter(p => {
       const matchesText = `${p.name} ${p.brand} ${p.category} ${p.color}`.toLowerCase().includes(query);
-      const matchesCategory = !$('categoryFilter').value || p.category === $('categoryFilter').value;
-      return matchesText && matchesCategory;
+      const matchesCategory = !category || p.category === category;
+      const matchesSize = !size || productSizes(p).includes(size);
+      return matchesText && matchesCategory && matchesSize;
     });
     $('productCount').textContent = `${filtered.length} produto(s)`;
     if (!filtered.length) {
-      $('productsGrid').innerHTML = '<div class="empty">Nenhum produto encontrado no momento.</div>';
+      $('productsGrid').innerHTML = '<div class="empty">Nenhum produto encontrado nesse tamanho. Escolha outro tamanho ou consulte a loja pelo WhatsApp.</div>';
       return;
     }
     $('productsGrid').innerHTML = filtered.map(p => {
-      const sizes = String(p.sizes || '').split(',').map(s=>s.trim()).filter(Boolean);
+      const sizes = productSizes(p);
       const image = p.image_url || '';
       return `<article class="card">
         ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(p.name)}" loading="lazy">` : '<div style="height:270px;display:grid;place-items:center;background:#191919;color:#aaa">Sem foto</div>'}
@@ -324,7 +376,24 @@
   }
   function initEvents() {
     $('searchInput').addEventListener('input',renderCatalog);
-    $('categoryFilter').addEventListener('change',renderCatalog);
+    $('categoryButtons').addEventListener('click',event=>{
+      const button=event.target.closest('[data-category]');
+      if(button) openCategory(button.dataset.category);
+    });
+    $('sizeButtons').addEventListener('click',event=>{
+      const button=event.target.closest('[data-size]');
+      if(!button) return;
+      selectedSize=button.dataset.size.toUpperCase();
+      $('sizeButtons').querySelectorAll('[data-size]').forEach(b=>b.classList.toggle('active',b===button));
+      renderCatalog();
+    });
+    $('backCategories').addEventListener('click',()=>{
+      selectedCategory=''; selectedSize='';
+      $('sizeNavigation').classList.add('hidden');
+      $('categoryNavigation').classList.remove('hidden');
+      $('productsGrid').innerHTML='<div class="empty">Escolha uma categoria para ver os produtos.</div>';
+      $('productCount').textContent=`${allProducts.length} produto(s)`;
+    });
     $('loginForm').addEventListener('submit',async event=>{
       event.preventDefault(); clearStatus('loginStatus');
       const button=$('loginButton'); button.disabled=true; button.textContent='Entrando...';
