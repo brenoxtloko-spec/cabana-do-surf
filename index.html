@@ -1,773 +1,382 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cabana do Surf</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080808">
+  <title>Cabana do Surf | Catálogo</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root {
-      --bg: #0b0b0b;
-      --panel: #121212;
-      --panel-2: #171717;
-      --gold: #d4a64a;
-      --gold-2: #f0c96a;
-      --text: #f5f1e8;
-      --muted: #b8b0a0;
-      --border: rgba(212,166,74,.22);
-      --green: #1ecb5c;
-      --red: #cc3d3d;
-    }
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: linear-gradient(180deg, #080808, #12100d 45%, #080808);
-      color: var(--text);
-    }
-    a { color: inherit; text-decoration: none; }
-    .container { width: min(1180px, calc(100% - 24px)); margin: 0 auto; }
-    header {
-      position: sticky; top: 0; z-index: 20;
-      backdrop-filter: blur(10px);
-      background: rgba(0,0,0,.88);
-      border-bottom: 1px solid var(--border);
-    }
-    .nav {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 16px; padding: 16px 0;
-    }
-    .brand { font-size: 28px; font-weight: 800; color: var(--gold-2); letter-spacing: .5px; }
-    .menu { display: flex; gap: 18px; flex-wrap: wrap; }
-    .menu a, .menu button {
-      background: none; border: 1px solid transparent; color: var(--text);
-      cursor: pointer; padding: 10px 14px; border-radius: 12px; font-size: 15px;
-    }
-    .menu a:hover, .menu button:hover { border-color: var(--border); color: var(--gold-2); }
-    .hero {
-      padding: 72px 0 28px;
-      background: radial-gradient(circle at 30% 30%, rgba(212,166,74,.14), transparent 38%),
-                  radial-gradient(circle at 80% 20%, rgba(212,166,74,.08), transparent 32%);
-    }
-    .hero-grid {
-      display: grid; grid-template-columns: 1.2fr .8fr; gap: 24px; align-items: center;
-    }
-    .tag {
-      display: inline-block; padding: 10px 16px; border: 1px solid var(--border);
-      border-radius: 999px; color: var(--gold-2); margin-bottom: 18px; background: rgba(212,166,74,.06);
-    }
-    h1 {
-      font-size: clamp(40px, 6vw, 74px); line-height: .98; margin: 0 0 18px; font-family: Georgia, serif;
-    }
-    .accent { color: var(--gold-2); }
-    .lead { color: var(--muted); font-size: 18px; line-height: 1.6; max-width: 720px; }
-    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
-    .btn {
-      background: linear-gradient(180deg, var(--gold-2), var(--gold)); color: #15110a; font-weight: 700;
-      border: 0; border-radius: 14px; padding: 14px 18px; cursor: pointer;
-    }
-    .btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
-    .hero-card, .card, .admin-box, .checkout-box {
-      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
-      border: 1px solid var(--border); border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,.24);
-    }
-    .hero-card { padding: 20px; }
-    .feature-list { display: grid; gap: 12px; }
-    .feature-item { padding: 16px; border-radius: 18px; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05); }
-    .strip {
-      padding: 18px 0 8px;
-    }
-    .strip-grid {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
-    }
-    .strip-item {
-      padding: 18px; border-radius: 18px; border: 1px solid var(--border); background: rgba(0,0,0,.24);
-    }
-    section { padding: 28px 0; }
-    .section-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 18px; }
-    .section-head h2 { margin: 0; font-size: 30px; font-family: Georgia, serif; }
-    .muted { color: var(--muted); }
-    .filters {
-      display: grid; grid-template-columns: 1fr 220px 180px; gap: 12px; margin-bottom: 18px;
-    }
-    input, select, textarea {
-      width: 100%; padding: 14px; border-radius: 14px; border: 1px solid var(--border);
-      background: #111; color: var(--text); outline: none;
-    }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
-    .card { overflow: hidden; }
-    .card img { width: 100%; height: 260px; object-fit: cover; display: block; }
-    .card-body { padding: 16px; }
-    .price-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .price { font-size: 22px; font-weight: 800; color: var(--gold-2); }
-    .badge { display: inline-block; padding: 6px 10px; border-radius: 999px; background: rgba(212,166,74,.1); color: var(--gold-2); border: 1px solid var(--border); font-size: 12px; }
-    .sizes { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 14px; }
-    .size { border: 1px solid rgba(255,255,255,.12); border-radius: 999px; padding: 6px 10px; font-size: 12px; }
-    .layout-main { display: grid; grid-template-columns: 1fr 360px; gap: 22px; }
-    .cart-item { display: grid; grid-template-columns: 56px 1fr auto; gap: 10px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
-    .cart-item img { width: 56px; height: 56px; object-fit: cover; border-radius: 12px; }
-    .mini-btn { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; }
-    .qty { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
-    .summary { display: grid; gap: 10px; margin-top: 16px; }
-    .summary-row { display: flex; justify-content: space-between; gap: 10px; }
-    .total { font-size: 22px; font-weight: 800; }
-    .notice { padding: 12px 14px; border-radius: 14px; background: rgba(212,166,74,.08); border: 1px solid var(--border); color: var(--gold-2); }
-    .success { color: #dff6e7; background: rgba(30,203,92,.14); border-color: rgba(30,203,92,.3); }
-    .danger { color: #ffe0e0; background: rgba(204,61,61,.12); border-color: rgba(204,61,61,.3); }
-    #adminPanel { display:none; }
-    .tabs { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0; }
-    .tab-btn { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: #111; color: var(--text); cursor: pointer; }
-    .tab-btn.active { background: linear-gradient(180deg, var(--gold-2), var(--gold)); color: #15110a; font-weight: 700; }
-    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
-    .stat { padding: 18px; border-radius: 18px; background: #111; border: 1px solid var(--border); }
-    .orders, .product-list { display: grid; gap: 12px; }
-    .order, .prod-row { padding: 14px; border-radius: 18px; background: #111; border: 1px solid var(--border); }
-    .prod-row { display: grid; grid-template-columns: 72px 1fr auto; gap: 12px; align-items: center; }
-    .prod-row img { width: 72px; height: 72px; object-fit: cover; border-radius: 14px; }
-    .admin-grid { display: grid; grid-template-columns: 360px 1fr; gap: 18px; }
-    .hidden { display: none; }
-    .wa {
-      position: fixed; right: 18px; bottom: 18px; width: 64px; height: 64px; border-radius: 50%;
-      background: #25D366; display: grid; place-items: center; font-size: 28px; color: white; font-weight: 800;
-      box-shadow: 0 12px 24px rgba(0,0,0,.25); z-index: 30;
-    }
-    footer { padding: 34px 0 60px; color: var(--muted); text-align: center; }
-    @media (max-width: 1024px) {
-      .hero-grid, .layout-main, .admin-grid { grid-template-columns: 1fr; }
-      .grid { grid-template-columns: repeat(2, 1fr); }
-      .strip-grid, .stats { grid-template-columns: repeat(2, 1fr); }
-      .filters { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 640px) {
-      .grid, .strip-grid, .stats { grid-template-columns: 1fr; }
-      .menu { display:none; }
-      h1 { font-size: 44px; }
-      .brand { font-size: 22px; }
-    }
+    :root{--bg:#080808;--panel:#121212;--gold:#f0c96a;--gold2:#d4a64a;--text:#f5f1e8;--muted:#b8b0a0;--border:rgba(212,166,74,.25);--green:#20c66b;--red:#d94b4b}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:linear-gradient(180deg,#080808,#15110b 48%,#080808);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+    a{color:inherit;text-decoration:none}button,input,select,textarea{font:inherit}.container{width:min(1200px,calc(100% - 28px));margin:auto}
+    header{position:sticky;top:0;z-index:10;background:rgba(0,0,0,.94);border-bottom:1px solid var(--border);backdrop-filter:blur(10px)}
+    .nav{min-height:66px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{font-size:clamp(20px,3vw,29px);font-weight:900;color:var(--gold);letter-spacing:.5px}.menu{display:flex;gap:18px;align-items:center}.menu a,.menu button{background:none;border:0;color:var(--text);cursor:pointer;padding:10px}
+    .hero{padding:55px 0 32px;background:radial-gradient(circle at 25% 20%,rgba(212,166,74,.16),transparent 42%)}.hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:25px;align-items:center}
+    .tag,.pill{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:8px 13px;color:var(--gold);background:rgba(212,166,74,.07)}
+    h1{font: bold clamp(38px,6vw,70px)/1 Georgia,serif;margin:18px 0}.accent{color:var(--gold)}.lead{font-size:18px;line-height:1.6;color:var(--muted);max-width:680px}
+    .panel,.card,.admin-box{background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.01));border:1px solid var(--border);border-radius:22px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+    .hero-card{padding:20px;display:grid;gap:12px}.feature{padding:16px;border-radius:16px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06)}.muted{color:var(--muted)}
+    section{padding:28px 0}.section-head{display:flex;justify-content:space-between;align-items:end;gap:15px;margin-bottom:18px}.section-head h2{font: bold 32px Georgia,serif;margin:0}
+    .filters{display:grid;grid-template-columns:1fr 240px;gap:12px;margin-bottom:20px}
+    input,select,textarea{width:100%;padding:13px 14px;border-radius:13px;border:1px solid var(--border);background:#111;color:var(--text);outline:none}
+    input:focus,select:focus,textarea:focus{border-color:var(--gold)}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:17px}
+    .card{overflow:hidden}.card img{width:100%;height:270px;object-fit:cover;background:#191919;display:block}.card-body{padding:15px}.card h3{margin:10px 0 7px;font-size:17px}.price{font-size:22px;font-weight:800;color:var(--gold)}.sizes{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.size{font-size:12px;padding:6px 9px;border:1px solid rgba(255,255,255,.14);border-radius:20px}
+    .btn{border:0;border-radius:13px;padding:13px 17px;background:linear-gradient(180deg,var(--gold),var(--gold2));color:#171108;font-weight:800;cursor:pointer;display:inline-flex;justify-content:center;align-items:center;gap:7px}.btn.secondary{background:transparent;color:var(--text);border:1px solid var(--border)}.btn:disabled{opacity:.55;cursor:not-allowed}
+    .wa-btn{width:100%;margin-top:12px;background:#20c66b;color:#07150c}.empty{padding:28px;text-align:center;border:1px dashed var(--border);border-radius:18px;color:var(--muted);grid-column:1/-1}
+    #admin{scroll-margin-top:80px}.login-box{max-width:520px;padding:20px}.login-box form{display:grid;gap:12px}.status{margin-top:12px;padding:12px;border-radius:12px;display:none}.status.show{display:block}.status.error{background:rgba(217,75,75,.13);border:1px solid rgba(217,75,75,.35);color:#ffdede}.status.ok{background:rgba(32,198,107,.12);border:1px solid rgba(32,198,107,.3);color:#d9ffe8}
+    #adminPanel{display:none}.tabs{display:flex;gap:9px;flex-wrap:wrap;margin:15px 0}.tab{padding:11px 14px;border:1px solid var(--border);background:#111;color:var(--text);border-radius:12px;cursor:pointer}.tab.active{background:var(--gold);color:#171108;font-weight:800}
+    .admin-grid{display:grid;grid-template-columns:360px 1fr;gap:18px}.admin-box{padding:18px}.form-grid{display:grid;gap:10px}.product-row{display:grid;grid-template-columns:74px 1fr auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--border);border-radius:15px;margin-bottom:10px}.product-row img{width:74px;height:74px;object-fit:cover;border-radius:11px}.small-btn{padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer}.danger{border-color:rgba(217,75,75,.5);color:#ffaaaa}.hidden{display:none!important}
+    .wa-float{position:fixed;right:18px;bottom:18px;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:#20c66b;color:white;font-size:27px;z-index:20;box-shadow:0 8px 24px #0008}
+    footer{text-align:center;padding:38px 0 55px;color:var(--muted)}
+    @media(max-width:950px){.grid{grid-template-columns:repeat(3,1fr)}.admin-grid{grid-template-columns:1fr}}
+    @media(max-width:650px){.hero-grid{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card img{height:205px}.filters{grid-template-columns:1fr}.menu{gap:3px}.menu a,.menu button{padding:8px 5px;font-size:13px}.section-head h2{font-size:27px}.product-row{grid-template-columns:58px 1fr}.product-row img{width:58px;height:58px}.product-row>div:last-child{grid-column:2}.hero{padding-top:38px}}
+    @media(max-width:390px){.grid{grid-template-columns:1fr 1fr}.card img{height:175px}.brand{font-size:18px}}
   </style>
 </head>
 <body>
-  <header>
-    <div class="container nav">
-      <a href="#top" class="brand">CABANA DO SURF</a>
-      <nav class="menu">
-        <a href="#produtos">Produtos</a>
-        <a href="#checkout">Checkout</a>
-        <button onclick="goAdminLogin()">Admin</button>
-      </nav>
+<header><div class="container nav">
+  <a class="brand" href="#inicio">CABANA DO SURF</a>
+  <nav class="menu"><a href="#catalogo">Catálogo</a><a href="#admin">Admin</a></nav>
+</div></header>
+
+<main id="inicio">
+  <section class="hero"><div class="container hero-grid">
+    <div><span class="tag">Moda masculina • Coleção 2026</span>
+      <h1>Estilo que define <span class="accent">quem você é</span></h1>
+      <p class="lead">Confira os produtos disponíveis na Cabana do Surf. Gostou de alguma peça? Chame nossa equipe pelo WhatsApp para consultar tamanhos e comprar.</p>
+      <a class="btn" href="#catalogo">Ver catálogo</a>
     </div>
-  </header>
+    <div class="panel hero-card">
+      <div class="feature"><strong>Atendimento pelo WhatsApp</strong><br><span class="muted">Tire dúvidas e faça seu pedido diretamente com a loja.</span></div>
+      <div class="feature"><strong>Novidades frequentes</strong><br><span class="muted">Consulte os produtos disponíveis no catálogo.</span></div>
+      <div class="feature"><strong>Cabana do Surf</strong><br><span class="muted">Angra dos Reis • RJ</span></div>
+    </div>
+  </div></section>
 
-  <main id="top">
-    <section class="hero">
-      <div class="container hero-grid">
-        <div>
-          <div class="tag">Nova coleção 2026</div>
-          <h1>Estilo que define <span class="accent">quem você é</span></h1>
-          <p class="lead">Loja masculina premium com catálogo completo, carrinho, checkout, frete grátis até 5 km e entrega em até 3 horas no horário comercial.</p>
-          <div class="hero-actions">
-            <a class="btn" href="#produtos">Ver coleção</a>
-            <a class="btn secondary" href="#checkout">Finalizar pedido</a>
-          </div>
-        </div>
-        <div class="hero-card">
-          <div class="feature-list">
-            <div class="feature-item"><strong>Frete grátis</strong><br><span class="muted">Até 5 km da loja</span></div>
-            <div class="feature-item"><strong>Entrega rápida</strong><br><span class="muted">Até 3 horas no horário comercial</span></div>
-            <div class="feature-item"><strong>Pix e WhatsApp</strong><br><span class="muted">Atendimento rápido e direto</span></div>
-          </div>
-        </div>
-      </div>
-    </section>
+  <section id="catalogo"><div class="container">
+    <div class="section-head"><div><h2>Nosso catálogo</h2><div class="muted">Escolha uma peça e fale com a loja pelo WhatsApp.</div></div><span class="pill" id="productCount">Carregando...</span></div>
+    <div class="filters">
+      <input id="searchInput" type="search" placeholder="Buscar produto, marca ou categoria...">
+      <select id="categoryFilter"><option value="">Todas as categorias</option></select>
+    </div>
+    <div id="productsGrid" class="grid"><div class="empty">Carregando produtos...</div></div>
+  </div></section>
 
-    <div class="strip">
-      <div class="container strip-grid">
-        <div class="strip-item"><strong>Frete Grátis</strong><br><span class="muted">Até 5 km de distância</span></div>
-        <div class="strip-item"><strong>Entrega Rápida</strong><br><span class="muted">Em até 3 horas</span></div>
-        <div class="strip-item"><strong>Pagamento Seguro</strong><br><span class="muted">Pix instantâneo</span></div>
-        <div class="strip-item"><strong>Qualidade Premium</strong><br><span class="muted">Moda masculina</span></div>
-      </div>
+  <section id="admin"><div class="container">
+    <div class="section-head"><div><h2>Painel administrativo</h2><div class="muted">Acesso exclusivo da equipe da loja.</div></div></div>
+    <div id="loginBox" class="panel login-box">
+      <form id="loginForm">
+        <input id="adminEmail" type="email" autocomplete="username" placeholder="E-mail do administrador" required>
+        <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Senha do administrador" required>
+        <button class="btn" id="loginButton" type="submit">Entrar</button>
+      </form>
+      <div id="loginStatus" class="status"></div>
     </div>
 
-    <section id="produtos">
-      <div class="container layout-main">
-        <div>
-          <div class="section-head">
-            <div>
-              <h2>Produtos em destaque</h2>
-              <div class="muted">Adicione ao carrinho e finalize no checkout ao lado.</div>
-            </div>
-          </div>
-          <div class="filters">
-            <input id="searchInput" placeholder="Buscar camisa, tênis, bermuda..." oninput="renderProducts()" />
-            <select id="categoryFilter" onchange="renderProducts()">
-              <option value="Todos">Todas categorias</option>
-            </select>
-            <select id="sortFilter" onchange="renderProducts()">
-              <option value="default">Ordenar</option>
-              <option value="low">Menor preço</option>
-              <option value="high">Maior preço</option>
-            </select>
-          </div>
-          <div id="productsGrid" class="grid"></div>
-        </div>
-
-        <aside>
-          <div class="checkout-box" style="padding:18px; position: sticky; top: 88px;">
-            <h3 style="margin-top:0">Carrinho</h3>
-            <div id="cartItems"></div>
-            <div id="emptyCart" class="muted">Seu carrinho está vazio.</div>
-            <div class="summary">
-              <div class="summary-row"><span class="muted">Subtotal</span><strong id="subtotalValue">R$ 0,00</strong></div>
-              <div class="summary-row"><span class="muted">Frete</span><strong id="shippingValue">R$ 0,00</strong></div>
-              <div class="summary-row total"><span>Total</span><span id="totalValue">R$ 0,00</span></div>
-            </div>
-            <div id="deliveryNote" class="notice" style="margin-top:14px;">Informe os dados no checkout para calcular frete.</div>
-          </div>
-        </aside>
+    <div id="adminPanel">
+      <div class="tabs">
+        <button class="tab active" data-tab="products">Produtos</button>
+        <button class="tab" data-tab="settings">Configurações</button>
+        <button class="tab secondary" id="logoutButton">Sair</button>
       </div>
-    </section>
-
-    <section id="checkout">
-      <div class="container">
-        <div class="section-head">
-          <div>
-            <h2>Checkout</h2>
-            <div class="muted">Feche o pedido com endereço, WhatsApp e Pix.</div>
-          </div>
+      <div id="productsTab" class="admin-grid">
+        <div class="admin-box">
+          <h3 id="formTitle">Cadastrar produto</h3>
+          <form id="productForm" class="form-grid">
+            <input id="pName" placeholder="Nome do produto" required>
+            <input id="pBrand" placeholder="Marca">
+            <input id="pCategory" placeholder="Categoria (ex.: Camisas)" required>
+            <input id="pPrice" type="number" min="0" step="0.01" placeholder="Preço (R$)" required>
+            <input id="pStock" type="number" min="0" step="1" placeholder="Estoque" value="1" required>
+            <input id="pSizes" placeholder="Tamanhos separados por vírgula: P,M,G,GG">
+            <input id="pColor" placeholder="Cor">
+            <label class="muted">Foto do produto (JPG, PNG ou WEBP)<input id="pImage" type="file" accept="image/jpeg,image/png,image/webp" style="margin-top:7px"></label>
+            <textarea id="pDesc" rows="3" placeholder="Descrição (opcional)"></textarea>
+            <button class="btn" id="saveProductButton" type="submit">Salvar produto</button>
+            <button class="btn secondary hidden" id="cancelEditButton" type="button">Cancelar edição</button>
+          </form>
+          <div id="productStatus" class="status"></div>
         </div>
-        <div class="layout-main">
-          <div class="checkout-box" style="padding:18px;">
-            <div style="display:grid; grid-template-columns: repeat(2,1fr); gap:12px;">
-              <div><input id="name" placeholder="Seu nome" /></div>
-              <div><input id="phone" placeholder="WhatsApp" /></div>
-              <div style="grid-column:1/-1"><input id="address" placeholder="Endereço completo" /></div>
-              <div><input id="district" placeholder="Bairro" /></div>
-              <div><input id="distance" type="number" placeholder="Distância em km" oninput="updateTotals()" /></div>
-              <div style="grid-column:1/-1"><textarea id="note" rows="4" placeholder="Observações do pedido"></textarea></div>
-            </div>
-            <div class="notice" style="margin-top:14px;">
-              <strong>Regras da entrega:</strong><br>
-              Frete grátis até 5 km. Comprou entre 9h e 18h, entregamos em até 3 horas. Acima disso o sistema calcula uma taxa.
-            </div>
-            <div class="notice" style="margin-top:14px;">
-              <strong>Pix:</strong><br>
-              Chave Pix exemplo: <span id="pixKey">24998251902</span>
-            </div>
-            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px;">
-              <button class="btn" onclick="finishOrder()">Finalizar pedido</button>
-              <button class="btn secondary" onclick="goAdminLogin()">Ir para o admin</button>
-            </div>
-            <div id="checkoutMessage" style="margin-top:14px;"></div>
-          </div>
-          <div class="checkout-box" style="padding:18px;">
-            <h3 style="margin-top:0">Pagamento e envio</h3>
-            <div class="feature-list">
-              <div class="feature-item"><strong>WhatsApp da loja</strong><br><span class="muted" id="whatsDisplay">(24) 99825-1902</span></div>
-              <div class="feature-item"><strong>Entrega estimada</strong><br><span class="muted" id="estimateText">Preencha a distância no checkout</span></div>
-              <div class="feature-item"><strong>Status do pedido</strong><br><span class="muted">Após finalizar, o pedido fica salvo no painel admin.</span></div>
-            </div>
-          </div>
+        <div class="admin-box">
+          <h3>Produtos cadastrados</h3>
+          <div id="adminProductList"><div class="muted">Carregando...</div></div>
         </div>
       </div>
-    </section>
-
-    <section id="adminLogin">
-      <div class="container">
-        <div class="section-head"><div><h2>Painel administrativo</h2><div class="muted">Entre com o e-mail e a senha cadastrados no Supabase.</div></div></div>
-        <div class="checkout-box" style="padding:18px; max-width:520px;">
-          <input id="adminEmail" type="email" placeholder="E-mail do administrador" autocomplete="username" />
-          <input id="adminPassword" type="password" placeholder="Senha do administrador" autocomplete="current-password" style="margin-top:10px;" />
-          <div style="margin-top:12px; display:flex; gap:12px;">
-            <button class="btn" onclick="loginAdmin()">Entrar</button>
-            <button class="btn secondary" onclick="logoutAdmin()">Sair</button>
-          </div>
-          <div id="adminLoginMessage" style="margin-top:12px;"></div>
-        </div>
+      <div id="settingsTab" class="admin-box hidden">
+        <h3>Configurações do catálogo</h3>
+        <p class="muted">O WhatsApp usado nos botões dos produtos é configurado no código do site.</p>
+        <p class="muted">Para alterar o número, procure a constante WHATSAPP_LOJA no início do JavaScript.</p>
       </div>
-    </section>
+    </div>
+  </div></section>
+</main>
+<a class="wa-float" id="whatsFloat" href="https://wa.me/5524998251902" target="_blank" rel="noopener" aria-label="Falar no WhatsApp">☎</a>
+<footer><div class="container">Cabana do Surf • Catálogo online • Atendimento pelo WhatsApp</div></footer>
 
-    <section id="adminPanel">
-      <div class="container">
-        <div class="section-head"><div><h2>Admin Cabana do Surf</h2><div class="muted">Gerencie produtos, pedidos e dados da loja.</div></div></div>
-        <div class="tabs">
-          <button class="tab-btn active" onclick="showTab('dashboard', this)">Dashboard</button>
-          <button class="tab-btn" onclick="showTab('products', this)">Produtos</button>
-          <button class="tab-btn" onclick="showTab('orders', this)">Pedidos</button>
-          <button class="tab-btn" onclick="showTab('settings', this)">Configurações</button>
-        </div>
+<script>
+(() => {
+  'use strict';
 
-        <div id="tab-dashboard" class="tab-content">
-          <div class="stats">
-            <div class="stat"><div class="muted">Faturamento</div><h3 id="statRevenue">R$ 0,00</h3></div>
-            <div class="stat"><div class="muted">Pedidos</div><h3 id="statOrders">0</h3></div>
-            <div class="stat"><div class="muted">Produtos</div><h3 id="statProducts">0</h3></div>
-            <div class="stat"><div class="muted">Estoque total</div><h3 id="statStock">0</h3></div>
-          </div>
-        </div>
+  // Configuração do projeto Supabase usado pela Cabana do Surf.
+  const SUPABASE_URL = 'https://jorbokleoepfyqvrvsjo.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_q0GZP00R4I74ScjtwRiMtw_G1dt6PKV';
+  const WHATSAPP_LOJA = '5524998251902';
+  const STORAGE_BUCKET = 'produtos';
 
-        <div id="tab-products" class="tab-content hidden">
-          <div class="admin-grid">
-            <div class="admin-box" style="padding:18px;">
-              <h3 style="margin-top:0">Cadastrar produto</h3>
-              <div style="display:grid; gap:10px;">
-                <input id="pName" placeholder="Nome do produto" />
-                <input id="pBrand" placeholder="Marca" />
-                <input id="pCategory" placeholder="Categoria" />
-                <input id="pPrice" type="number" placeholder="Preço" />
-                <input id="pStock" type="number" placeholder="Estoque" />
-                <input id="pSizes" placeholder="Tamanhos ex: P,M,G,GG" />
-                <label class="muted" for="pImage">Foto do produto (JPG, PNG ou WEBP)</label>
-                <input id="pImage" type="file" accept="image/*" />
-                <textarea id="pDesc" rows="4" placeholder="Descrição"></textarea>
-                <button class="btn" onclick="addProduct()">Salvar produto</button>
-              </div>
-            </div>
-            <div class="admin-box" style="padding:18px;">
-              <h3 style="margin-top:0">Produtos cadastrados</h3>
-              <div id="productList" class="product-list"></div>
-            </div>
-          </div>
-        </div>
+  const $ = (id) => document.getElementById(id);
+  const money = (value) => Number(value || 0).toLocaleString('pt-BR', {style:'currency',currency:'BRL'});
+  let db = null;
+  let currentUser = null;
+  let allProducts = [];
+  let editingId = null;
 
-        <div id="tab-orders" class="tab-content hidden">
-          <div class="admin-box" style="padding:18px;">
-            <h3 style="margin-top:0">Pedidos recebidos</h3>
-            <div id="ordersList" class="orders"></div>
-          </div>
-        </div>
-
-        <div id="tab-settings" class="tab-content hidden">
-          <div class="admin-grid">
-            <div class="admin-box" style="padding:18px;">
-              <h3 style="margin-top:0">Dados da loja</h3>
-              <div style="display:grid; gap:10px;">
-                <input id="sWhatsapp" placeholder="WhatsApp da loja" />
-                <input id="sPix" placeholder="Chave Pix" />
-                <input id="sFreeKm" type="number" placeholder="Frete grátis até quantos km" />
-                <input id="sBusinessStart" type="number" placeholder="Horário início ex: 9" />
-                <input id="sBusinessEnd" type="number" placeholder="Horário fim ex: 18" />
-                <button class="btn" onclick="saveSettings()">Salvar configurações</button>
-              </div>
-            </div>
-            <div class="admin-box" style="padding:18px;">
-              <h3 style="margin-top:0">Instruções</h3>
-              <p class="muted">Altere WhatsApp, Pix, frete grátis e horário comercial. Essas configurações continuam salvas neste navegador.</p>
-              <p class="muted">Produtos e fotos ficam no Supabase e aparecem para todos os clientes.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <a class="wa" id="waBtn" href="https://wa.me/5524998251902" target="_blank" title="WhatsApp">☎</a>
-
-  <footer>
-    <div class="container">Cabana do Surf • Catálogo online</div>
-  </footer>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-  (() => {
-    if (window.__cabanaCatalogInitialized) return;
-    window.__cabanaCatalogInitialized = true;
-
-    const SUPABASE_URL = "https://jorbokleoepfyqvrvsjo.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_qOGZP0OR4I74ScjtwRiMtw_G1dt6PKV";
-    window.cabanaSupabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    const DEFAULT_SETTINGS = {
-      whatsapp: '5524998251902',
-      whatsappText: '(24) 99825-1902',
-      pix: '24998251902',
-      freeKm: 5,
-      businessStart: 9,
-      businessEnd: 18
+  function showStatus(id, message, type='error') {
+    const el = $(id);
+    el.textContent = message;
+    el.className = `status show ${type}`;
+  }
+  function clearStatus(id) {
+    const el = $(id);
+    el.textContent = '';
+    el.className = 'status';
+  }
+  function escapeHtml(value='') {
+    return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+  function whatsappLink(product) {
+    const text = `Olá! Tenho interesse neste produto da Cabana do Surf:\n${product.name}\nPreço: ${money(product.price)}\nGostaria de consultar disponibilidade e tamanhos.`;
+    return `https://wa.me/${WHATSAPP_LOJA}?text=${encodeURIComponent(text)}`;
+  }
+  function normalizeProduct(row) {
+    return {
+      id: row.id, name: row.name || '', brand: row.brand || 'Cabana do Surf',
+      category: row.category || 'Geral', price: Number(row.price || 0),
+      stock: Number(row.stock || 0), sizes: row.sizes || '',
+      color: row.color || '', image_url: row.image_url || '',
+      description: row.description || '', active: row.active !== false
     };
-
-    let products = [];
-    let cart = load('cabana_cart', []);
-    let orders = load('cabana_orders', []);
-    let settings = load('cabana_settings', DEFAULT_SETTINGS);
-    let adminUser = null;
-
-    function load(key, fallback) {
-      try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
-      catch(e) { return fallback; }
+  }
+  async function loadCatalog() {
+    $('productsGrid').innerHTML = '<div class="empty">Carregando produtos...</div>';
+    if (!db) {
+      $('productsGrid').innerHTML = '<div class="empty">Não foi possível conectar ao catálogo. Confira a configuração do Supabase.</div>';
+      $('productCount').textContent = 'Erro de conexão';
+      return;
     }
-    function save(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
-    function money(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-    function byId(id) { return document.getElementById(id); }
-    function safe(value) {
-      return String(value ?? '').replace(/[&<>"']/g, c => ({
-        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-      }[c]));
+    const {data,error} = await db.from('products').select('*').eq('active',true).order('created_at',{ascending:false});
+    if (error) {
+      console.error('Erro ao carregar catálogo:', error);
+      $('productsGrid').innerHTML = '<div class="empty">Não foi possível carregar os produtos. Atualize a página ou avise a loja.</div>';
+      $('productCount').textContent = 'Falha ao carregar';
+      return;
     }
-    function getShipping(distance) {
-      const d = Number(distance || 0);
-      if (!d) return 0;
-      if (d <= Number(settings.freeKm)) return 0;
-      if (d <= 10) return 12;
-      if (d <= 15) return 20;
-      return 30;
+    allProducts = (data || []).map(normalizeProduct);
+    renderCatalog();
+  }
+  function renderCatalog() {
+    const query = $('searchInput').value.trim().toLowerCase();
+    const category = $('categoryFilter').value;
+    const categories = [...new Set(allProducts.map(p=>p.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    const oldValue = category;
+    $('categoryFilter').innerHTML = '<option value="">Todas as categorias</option>' + categories.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    $('categoryFilter').value = categories.includes(oldValue) ? oldValue : '';
+    const filtered = allProducts.filter(p => {
+      const matchesText = `${p.name} ${p.brand} ${p.category} ${p.color}`.toLowerCase().includes(query);
+      const matchesCategory = !$('categoryFilter').value || p.category === $('categoryFilter').value;
+      return matchesText && matchesCategory;
+    });
+    $('productCount').textContent = `${filtered.length} produto(s)`;
+    if (!filtered.length) {
+      $('productsGrid').innerHTML = '<div class="empty">Nenhum produto encontrado no momento.</div>';
+      return;
     }
-    function getEstimate(distance) {
-      const h = new Date().getHours();
-      const d = Number(distance || 0);
-      if (!d) return 'Preencha a distância no checkout';
-      if (h >= Number(settings.businessStart) && h < Number(settings.businessEnd)) {
-        return d <= 15 ? 'Seu pedido chega em até 3 horas' : 'Entrega sob consulta';
-      }
-      return 'Pedido fora do horário comercial: envio no próximo período disponível';
+    $('productsGrid').innerHTML = filtered.map(p => {
+      const sizes = String(p.sizes || '').split(',').map(s=>s.trim()).filter(Boolean);
+      const image = p.image_url || '';
+      return `<article class="card">
+        ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(p.name)}" loading="lazy">` : '<div style="height:270px;display:grid;place-items:center;background:#191919;color:#aaa">Sem foto</div>'}
+        <div class="card-body">
+          <span class="pill">${escapeHtml(p.category)}</span>
+          <h3>${escapeHtml(p.name)}</h3>
+          <div class="muted">${escapeHtml(p.brand)}${p.color ? ' • '+escapeHtml(p.color) : ''}</div>
+          ${p.description ? `<p class="muted">${escapeHtml(p.description)}</p>` : ''}
+          ${sizes.length ? `<div class="sizes">${sizes.map(s=>`<span class="size">${escapeHtml(s)}</span>`).join('')}</div>` : ''}
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="price">${money(p.price)}</span><span class="muted">${p.stock>0?'Disponível':'Sob consulta'}</span></div>
+          <a class="btn wa-btn" href="${whatsappLink(p)}" target="_blank" rel="noopener">Consultar pelo WhatsApp</a>
+        </div></article>`;
+    }).join('');
+  }
+  async function uploadPhoto(file) {
+    if (!file) return null;
+    if (!['image/jpeg','image/png','image/webp'].includes(file.type)) throw new Error('Escolha uma imagem JPG, PNG ou WEBP.');
+    if (file.size > 8*1024*1024) throw new Error('A foto deve ter no máximo 8 MB.');
+    const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const {error} = await db.storage.from(STORAGE_BUCKET).upload(path,file,{upsert:false,contentType:file.type});
+    if (error) throw error;
+    const {data} = db.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+    return data.publicUrl;
+  }
+  async function loadAdminProducts() {
+    const {data,error} = await db.from('products').select('*').order('created_at',{ascending:false});
+    if (error) {
+      console.error(error);
+      $('adminProductList').textContent = 'Erro ao carregar produtos: ' + error.message;
+      return;
     }
-
-    async function fetchProducts() {
-      const { data, error } = await supabase
-        .from('products')
-        .select('id,name,price,category,sizes,color,image_url,tag,active,brand,stock,description,created_at')
-        .eq('active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Erro ao carregar produtos:', error);
-        byId('productsGrid').innerHTML = '<div class="notice danger">Não foi possível carregar os produtos. Confira a conexão com o Supabase.</div>';
-        return;
-      }
-      products = (data || []).map(p => ({
-        ...p,
-        price: Number(p.price || 0),
-        stock: Number(p.stock || 0),
-        sizes: String(p.sizes || '').split(',').map(s => s.trim()).filter(Boolean),
-        image: p.image_url || '',
-        brand: p.brand || 'Cabana do Surf',
-        description: p.description || '',
-        category: p.category || 'Geral'
-      }));
-      renderProducts();
-      renderProductList();
-      renderStats();
-    }
-
-    function populateCategories() {
-      const select = byId('categoryFilter');
-      const current = select.value;
-      const cats = ['Todos', ...new Set(products.map(p => p.category))];
-      select.innerHTML = cats.map(c => `<option value="${safe(c)}">${safe(c)}</option>`).join('');
-      select.value = cats.includes(current) ? current : 'Todos';
-    }
-
-    function renderProducts() {
-      populateCategories();
-      let list = [...products];
-      const q = byId('searchInput').value.toLowerCase().trim();
-      const c = byId('categoryFilter').value;
-      const s = byId('sortFilter').value;
-      if (q) list = list.filter(p => `${p.name} ${p.brand} ${p.category} ${p.color || ''}`.toLowerCase().includes(q));
-      if (c !== 'Todos') list = list.filter(p => p.category === c);
-      if (s === 'low') list.sort((a,b) => a.price - b.price);
-      if (s === 'high') list.sort((a,b) => b.price - a.price);
-      if (!list.length) {
-        byId('productsGrid').innerHTML = '<div class="notice">Nenhum produto disponível nesta categoria no momento.</div>';
-        return;
-      }
-      byId('productsGrid').innerHTML = list.map(p => `
-        <div class="card">
-          <img src="${safe(p.image || 'https://placehold.co/600x700/171717/d4a64a?text=Cabana+do+Surf')}" alt="${safe(p.name)}">
-          <div class="card-body">
-            <div style="display:flex; justify-content:space-between; gap:8px; align-items:start;">
-              <div>
-                <div class="badge">${safe(p.category)}</div>
-                <h3 style="margin:10px 0 6px;">${safe(p.name)}</h3>
-                <div class="muted">${safe(p.brand)}</div>
-              </div>
-              ${p.tag ? `<div class="badge">${safe(p.tag)}</div>` : ''}
-            </div>
-            <p class="muted">${safe(p.description || p.color || '')}</p>
-            <div class="sizes">${p.sizes.map(size => `<span class="size">${safe(size)}</span>`).join('')}</div>
-            <div class="price-row">
-              <div class="price">${money(p.price)}</div>
-              <button class="btn" onclick="addToCart('${safe(p.id)}')">Consultar</button>
-            </div>
-          </div>
+    const rows = (data || []).map(normalizeProduct);
+    $('adminProductList').innerHTML = rows.length ? rows.map(p=>`
+      <div class="product-row">
+        ${p.image_url ? `<img src="${escapeHtml(p.image_url)}" alt="">` : '<div></div>'}
+        <div><strong>${escapeHtml(p.name)}</strong><br><span class="muted">${escapeHtml(p.category)} • Estoque: ${p.stock} • ${p.active?'Ativo':'Oculto'}</span><br><span class="price">${money(p.price)}</span></div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="small-btn" data-edit="${escapeHtml(p.id)}">Editar</button>
+          <button class="small-btn danger" data-delete="${escapeHtml(p.id)}">Excluir</button>
+          <button class="small-btn" data-toggle="${escapeHtml(p.id)}" data-active="${p.active?'1':'0'}">${p.active?'Ocultar':'Ativar'}</button>
         </div>
-      `).join('');
-    }
-
-    function addToCart(id) {
-      const p = products.find(x => String(x.id) === String(id));
-      if (!p) return;
-      const found = cart.find(i => String(i.id) === String(id));
-      if (found) found.quantity += 1;
-      else cart.push({ ...p, quantity: 1 });
-      save('cabana_cart', cart);
-      renderCart();
-    }
-    function changeQty(id, delta) {
-      const item = cart.find(i => String(i.id) === String(id));
-      if (!item) return;
-      item.quantity += delta;
-      if (item.quantity <= 0) cart = cart.filter(i => String(i.id) !== String(id));
-      save('cabana_cart', cart);
-      renderCart();
-    }
-    function removeItem(id) {
-      cart = cart.filter(i => String(i.id) !== String(id));
-      save('cabana_cart', cart);
-      renderCart();
-    }
-    function renderCart() {
-      const holder = byId('cartItems');
-      byId('emptyCart').style.display = cart.length ? 'none' : 'block';
-      holder.innerHTML = cart.map(i => `
-        <div class="cart-item">
-          <img src="${safe(i.image)}" alt="${safe(i.name)}">
-          <div>
-            <strong>${safe(i.name)}</strong><br>
-            <span class="muted">${money(i.price)}</span>
-            <div class="qty">
-              <button class="mini-btn" onclick="changeQty('${safe(i.id)}', -1)">-</button>
-              <strong>${i.quantity}</strong>
-              <button class="mini-btn" onclick="changeQty('${safe(i.id)}', 1)">+</button>
-            </div>
-          </div>
-          <div><button class="mini-btn" onclick="removeItem('${safe(i.id)}')">Excluir</button></div>
-        </div>
-      `).join('');
-      updateTotals();
-    }
-    function updateTotals() {
-      const subtotal = cart.reduce((a,b) => a + Number(b.price) * b.quantity, 0);
-      const shipping = getShipping(byId('distance').value);
-      byId('subtotalValue').textContent = money(subtotal);
-      byId('shippingValue').textContent = money(shipping);
-      byId('totalValue').textContent = money(subtotal + shipping);
-      byId('deliveryNote').textContent = getEstimate(byId('distance').value);
-      byId('estimateText').textContent = getEstimate(byId('distance').value);
-    }
-
-    function finishOrder() {
-      const name = byId('name').value.trim();
-      const phone = byId('phone').value.trim();
-      const address = byId('address').value.trim();
-      const district = byId('district').value.trim();
-      const distance = Number(byId('distance').value || 0);
-      const note = byId('note').value.trim();
-      const msg = byId('checkoutMessage');
-      if (!cart.length) { msg.innerHTML = '<div class="notice danger">Seu carrinho está vazio.</div>'; return; }
-      if (!name || !phone || !address) { msg.innerHTML = '<div class="notice danger">Preencha nome, WhatsApp e endereço.</div>'; return; }
-      const subtotal = cart.reduce((a,b) => a + Number(b.price) * b.quantity, 0);
-      const shipping = getShipping(distance);
-      const total = subtotal + shipping;
-      const order = {
-        id: 'PED-' + Date.now(),
-        createdAt: new Date().toLocaleString('pt-BR'),
-        customer: { name, phone, address, district, distance, note },
-        items: [...cart], subtotal, shipping, total,
-        estimate: getEstimate(distance), status: 'Recebido'
+      </div>`).join('') : '<div class="muted">Nenhum produto cadastrado ainda.</div>';
+  }
+  function resetProductForm() {
+    editingId = null;
+    $('productForm').reset();
+    $('pStock').value = 1;
+    $('formTitle').textContent = 'Cadastrar produto';
+    $('saveProductButton').textContent = 'Salvar produto';
+    $('cancelEditButton').classList.add('hidden');
+    clearStatus('productStatus');
+  }
+  async function saveProduct(event) {
+    event.preventDefault();
+    clearStatus('productStatus');
+    const button = $('saveProductButton');
+    button.disabled = true;
+    button.textContent = 'Salvando...';
+    try {
+      const name = $('pName').value.trim();
+      const price = Number($('pPrice').value);
+      const stock = Number($('pStock').value);
+      if (!name || !Number.isFinite(price) || price <= 0 || !Number.isInteger(stock) || stock < 0) throw new Error('Confira nome, preço e estoque.');
+      let imageUrl = null;
+      const file = $('pImage').files[0];
+      if (file) imageUrl = await uploadPhoto(file);
+      const product = {
+        name, brand:$('pBrand').value.trim() || 'Cabana do Surf',
+        category:$('pCategory').value.trim() || 'Geral', price, stock,
+        sizes:$('pSizes').value.trim(), color:$('pColor').value.trim(),
+        description:$('pDesc').value.trim(), active:true
       };
-      orders.unshift(order);
-      save('cabana_orders', orders);
-      cart = [];
-      save('cabana_cart', cart);
-      renderCart();
-      renderOrders();
-      renderStats();
-      const lines = order.items.map(i => `${i.quantity}x ${i.name} - ${money(i.price)}`).join('\n');
-      const text = `Olá, fiz um pedido na Cabana do Surf.\nPedido: ${order.id}\n${lines}\nTotal: ${money(total)}\nNome: ${name}\nWhatsApp: ${phone}\nEndereço: ${address}\nBairro: ${district}\nObservações: ${note || '-'}\nPagamento via Pix: ${settings.pix}`;
-      msg.innerHTML = `<div class="notice success">Pedido preparado. <a style="text-decoration:underline" target="_blank" rel="noopener" href="https://wa.me/${safe(settings.whatsapp)}?text=${encodeURIComponent(text)}">Enviar pedido no WhatsApp</a></div>`;
-      ['name','phone','address','district','distance','note'].forEach(id => byId(id).value = '');
-      updateTotals();
-    }
-
-    function goAdminLogin() {
-      byId('adminLogin').scrollIntoView({ behavior: 'smooth' });
-    }
-    async function loginAdmin() {
-      const email = byId('adminEmail').value.trim();
-      const password = byId('adminPassword').value;
-      const msg = byId('adminLoginMessage');
-      if (!email || !password) {
-        msg.innerHTML = '<div class="notice danger">Digite seu e-mail e sua senha.</div>';
-        return;
+      if (imageUrl) product.image_url = imageUrl;
+      let result;
+      if (editingId) result = await db.from('products').update(product).eq('id',editingId);
+      else {
+        if (!imageUrl) throw new Error('Selecione a foto do produto antes de salvar.');
+        result = await db.from('products').insert(product);
       }
-      const { data, error } = await window.cabanaSupabaseClient.auth.signInWithPassword({ email, password });
-      if (error) {
-        msg.innerHTML = `<div class="notice danger">${safe(error.message)}</div>`;
-        return;
-      }
-      adminUser = data.user;
-      byId('adminPanel').style.display = 'block';
-      msg.innerHTML = '<div class="notice success">Login realizado com sucesso.</div>';
-      await fetchProducts();
-      renderOrders(); renderStats(); applySettings();
-      setTimeout(() => byId('adminPanel').scrollIntoView({ behavior: 'smooth' }), 150);
+      if (result.error) throw result.error;
+      showStatus('productStatus', editingId ? 'Produto atualizado com sucesso!' : 'Produto cadastrado com sucesso!', 'ok');
+      resetProductForm();
+      await Promise.all([loadCatalog(),loadAdminProducts()]);
+    } catch(error) {
+      console.error('Erro ao salvar produto:',error);
+      showStatus('productStatus', error.message || 'Não foi possível salvar o produto.');
+    } finally {
+      button.disabled = false;
+      button.textContent = editingId ? 'Atualizar produto' : 'Salvar produto';
     }
-    async function logoutAdmin() {
-      await window.cabanaSupabaseClient.auth.signOut();
-      adminUser = null;
-      byId('adminPanel').style.display = 'none';
-      byId('adminLoginMessage').innerHTML = '<div class="notice">Você saiu do painel.</div>';
-    }
-    function showTab(tab, el) {
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-      byId('tab-' + tab).classList.remove('hidden');
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      el.classList.add('active');
-      if (tab === 'products') renderProductList();
-      if (tab === 'orders') renderOrders();
-    }
-    function renderStats() {
-      byId('statRevenue').textContent = money(orders.reduce((a,b)=> a + Number(b.total || 0), 0));
-      byId('statOrders').textContent = String(orders.length);
-      byId('statProducts').textContent = String(products.length);
-      byId('statStock').textContent = String(products.reduce((a,b)=> a + Number(b.stock || 0), 0));
-    }
-    function renderProductList() {
-      const list = byId('productList');
-      if (!products.length) {
-        list.innerHTML = '<div class="muted">Nenhum produto cadastrado. Adicione o primeiro ao lado.</div>';
-        return;
-      }
-      list.innerHTML = products.map(p => `
-        <div class="prod-row">
-          <img src="${safe(p.image)}" alt="${safe(p.name)}">
-          <div>
-            <strong>${safe(p.name)}</strong><br>
-            <span class="muted">${safe(p.category)} • ${safe(p.brand)}</span><br>
-            <span class="muted">Estoque: ${Number(p.stock || 0)}</span>
-          </div>
-          <div>
-            <div class="price">${money(p.price)}</div>
-            <button class="mini-btn" onclick="deleteProduct('${safe(p.id)}')">Retirar do catálogo</button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    async function addProduct() {
-      if (!adminUser) return alert('Entre no painel com seu login antes de cadastrar produtos.');
-      const name = byId('pName').value.trim();
-      const brand = byId('pBrand').value.trim() || 'Cabana do Surf';
-      const category = byId('pCategory').value.trim() || 'Geral';
-      const price = Number(byId('pPrice').value || 0);
-      const stock = Number(byId('pStock').value || 0);
-      const sizes = (byId('pSizes').value || 'P,M,G,GG').split(',').map(s => s.trim()).filter(Boolean).join(', ');
-      const description = byId('pDesc').value.trim();
-      const file = byId('pImage').files[0];
-      if (!name || price <= 0) return alert('Preencha nome e preço válido.');
-      let image_url = '';
-      if (file) {
-        if (!file.type.startsWith('image/')) return alert('Escolha um arquivo de imagem.');
-        const extension = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
-        const path = `${Date.now()}-${crypto.randomUUID()}.${extension}`;
-        const { error: uploadError } = await window.cabanaSupabaseClient.storage.from('produtos').upload(path, file, {
-          cacheControl: '3600', upsert: false, contentType: file.type
-        });
-        if (uploadError) return alert('Erro ao enviar foto: ' + uploadError.message);
-        image_url = window.cabanaSupabaseClient.storage.from('produtos').getPublicUrl(path).data.publicUrl;
-      }
-      const { error } = await window.cabanaSupabaseClient.from('products').insert({
-        name, brand, category, price, stock, sizes, description,
-        color: '', image_url, tag: '', active: true
-      });
-      if (error) return alert('Erro ao salvar produto: ' + error.message);
-      ['pName','pBrand','pCategory','pPrice','pStock','pSizes','pImage','pDesc'].forEach(id => byId(id).value = '');
-      await fetchProducts();
-      alert('Produto cadastrado e publicado no catálogo!');
-    }
-
-    async function deleteProduct(id) {
-      if (!adminUser) return alert('Faça login novamente.');
-      if (!confirm('Retirar este produto do catálogo?')) return;
-      const { error } = await window.cabanaSupabaseClient.from('products').update({ active: false }).eq('id', id);
-      if (error) return alert('Não foi possível retirar o produto: ' + error.message);
-      await fetchProducts();
-      alert('Produto retirado do catálogo.');
-    }
-
-    function renderOrders() {
-      const holder = byId('ordersList');
-      if (!orders.length) { holder.innerHTML = '<div class="muted">Nenhum pedido registrado neste navegador.</div>'; return; }
-      holder.innerHTML = orders.map(o => `
-        <div class="order">
-          <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-            <div>
-              <strong>${safe(o.id)}</strong><br>
-              <span class="muted">${safe(o.createdAt)}</span><br>
-              <span class="muted">${safe(o.customer.name)} • ${safe(o.customer.phone)}</span><br>
-              <span class="muted">${safe(o.customer.address)} - ${safe(o.customer.district)}</span>
-            </div>
-            <div><div class="price">${money(o.total)}</div><div class="badge">${safe(o.status)}</div></div>
-          </div>
-          <div style="margin-top:10px;" class="muted">${o.items.map(i => `${i.quantity}x ${safe(i.name)}`).join(' • ')}</div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
-            <button class="mini-btn" onclick="setOrderStatus('${safe(o.id)}','Recebido')">Recebido</button>
-            <button class="mini-btn" onclick="setOrderStatus('${safe(o.id)}','Em separação')">Em separação</button>
-            <button class="mini-btn" onclick="setOrderStatus('${safe(o.id)}','Saiu para entrega')">Saiu para entrega</button>
-            <button class="mini-btn" onclick="setOrderStatus('${safe(o.id)}','Entregue')">Entregue</button>
-          </div>
-        </div>
-      `).join('');
-    }
-    function setOrderStatus(id, status) {
-      const order = orders.find(o => o.id === id);
-      if (!order) return;
-      order.status = status;
-      save('cabana_orders', orders);
-      renderOrders();
-    }
-    function applySettings() {
-      byId('pixKey').textContent = settings.pix;
-      byId('whatsDisplay').textContent = settings.whatsappText;
-      byId('waBtn').href = `https://wa.me/${settings.whatsapp}`;
-      byId('sWhatsapp').value = settings.whatsappText;
-      byId('sPix').value = settings.pix;
-      byId('sFreeKm').value = settings.freeKm;
-      byId('sBusinessStart').value = settings.businessStart;
-      byId('sBusinessEnd').value = settings.businessEnd;
-      updateTotals();
-    }
-    function saveSettings() {
-      const text = byId('sWhatsapp').value.trim() || '(24) 99825-1902';
-      settings.whatsappText = text;
-      settings.whatsapp = text.replace(/\D/g, '');
-      settings.pix = byId('sPix').value.trim() || '24998251902';
-      settings.freeKm = Number(byId('sFreeKm').value || 5);
-      settings.businessStart = Number(byId('sBusinessStart').value || 9);
-      settings.businessEnd = Number(byId('sBusinessEnd').value || 18);
-      save('cabana_settings', settings);
-      applySettings();
-      alert('Configurações salvas neste navegador.');
-    }
-
-    async function init() {
-      renderCart();
-      renderOrders();
-      renderStats();
-      applySettings();
-      const { data } = await window.cabanaSupabaseClient.auth.getSession();
-      if (data.session) {
-        adminUser = data.session.user;
-        byId('adminPanel').style.display = 'block';
-        byId('adminLoginMessage').innerHTML = '<div class="notice success">Sessão administrativa ativa.</div>';
-      }
-      await fetchProducts();
-      renderProductList();
-    }
-    window.cabanaSupabaseClient.auth.onAuthStateChange((_event, session) => {
-      adminUser = session?.user || null;
-      if (!adminUser) byId('adminPanel').style.display = 'none';
+  }
+  async function editProduct(id) {
+    const {data,error} = await db.from('products').select('*').eq('id',id).single();
+    if (error) { showStatus('productStatus',error.message); return; }
+    const p = normalizeProduct(data);
+    editingId = p.id;
+    $('pName').value=p.name; $('pBrand').value=p.brand; $('pCategory').value=p.category;
+    $('pPrice').value=p.price; $('pStock').value=p.stock; $('pSizes').value=p.sizes;
+    $('pColor').value=p.color; $('pDesc').value=p.description; $('pImage').value='';
+    $('formTitle').textContent='Editar produto'; $('saveProductButton').textContent='Atualizar produto';
+    $('cancelEditButton').classList.remove('hidden');
+    $('productForm').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  async function deleteProduct(id) {
+    if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+    const {error} = await db.from('products').delete().eq('id',id);
+    if (error) { alert('Não foi possível excluir: '+error.message); return; }
+    await Promise.all([loadCatalog(),loadAdminProducts()]);
+  }
+  async function toggleProduct(id,active) {
+    const {error} = await db.from('products').update({active:!active}).eq('id',id);
+    if (error) { alert('Não foi possível alterar o produto: '+error.message); return; }
+    await Promise.all([loadCatalog(),loadAdminProducts()]);
+  }
+  async function showAdmin(user) {
+    currentUser = user;
+    $('loginBox').style.display='none';
+    $('adminPanel').style.display='block';
+    await loadAdminProducts();
+  }
+  async function signOut() {
+    if (db) await db.auth.signOut();
+    currentUser=null;
+    $('adminPanel').style.display='none';
+    $('loginBox').style.display='block';
+    $('adminPassword').value='';
+    showStatus('loginStatus','Você saiu do painel.','ok');
+  }
+  function initEvents() {
+    $('searchInput').addEventListener('input',renderCatalog);
+    $('categoryFilter').addEventListener('change',renderCatalog);
+    $('loginForm').addEventListener('submit',async event=>{
+      event.preventDefault(); clearStatus('loginStatus');
+      const button=$('loginButton'); button.disabled=true; button.textContent='Entrando...';
+      try {
+        const {data,error}=await db.auth.signInWithPassword({email:$('adminEmail').value.trim(),password:$('adminPassword').value});
+        if(error) throw error;
+        showStatus('loginStatus','Login realizado com sucesso.','ok');
+        await showAdmin(data.user);
+      } catch(error) {
+        console.error('Erro no login:',error);
+        showStatus('loginStatus',error.message || 'Não foi possível entrar.');
+      } finally {button.disabled=false;button.textContent='Entrar';}
     });
-    // Funções chamadas pelos eventos inline do HTML.
-    Object.assign(window, {
-      goAdminLogin, renderProducts, updateTotals, finishOrder,
-      loginAdmin, logoutAdmin, showTab, addProduct, deleteProduct,
-      addToCart, changeQty, removeItem, setOrderStatus, saveSettings
+    $('logoutButton').addEventListener('click',signOut);
+    $('productForm').addEventListener('submit',saveProduct);
+    $('cancelEditButton').addEventListener('click',resetProductForm);
+    $('adminProductList').addEventListener('click',event=>{
+      const edit=event.target.closest('[data-edit]');
+      const del=event.target.closest('[data-delete]');
+      const toggle=event.target.closest('[data-toggle]');
+      if(edit) editProduct(edit.dataset.edit);
+      if(del) deleteProduct(del.dataset.delete);
+      if(toggle) toggleProduct(toggle.dataset.toggle,toggle.dataset.active==='1');
     });
-
-    init();
-  })();
-  </script>
+    document.querySelectorAll('.tab[data-tab]').forEach(btn=>btn.addEventListener('click',()=>{
+      document.querySelectorAll('.tab[data-tab]').forEach(b=>b.classList.toggle('active',b===btn));
+      $('productsTab').classList.toggle('hidden',btn.dataset.tab!=='products');
+      $('settingsTab').classList.toggle('hidden',btn.dataset.tab!=='settings');
+    }));
+  }
+  async function init() {
+    $('whatsFloat').href=`https://wa.me/${WHATSAPP_LOJA}`;
+    if (!window.supabase || !window.supabase.createClient) {
+      $('productsGrid').innerHTML='<div class="empty">A biblioteca do catálogo não carregou. Atualize a página.</div>';
+      return;
+    }
+    if (SUPABASE_ANON_KEY.startsWith('COLE_AQUI')) {
+      $('productsGrid').innerHTML='<div class="empty">Falta configurar a chave pública do Supabase neste arquivo.</div>';
+      showStatus('loginStatus','A chave pública do Supabase ainda precisa ser colocada no código.');
+      return;
+    }
+    db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    initEvents();
+    await loadCatalog();
+    const {data:{session}}=await db.auth.getSession();
+    if(session?.user) await showAdmin(session.user);
+    db.auth.onAuthStateChange((_event,session)=>{
+      if(session?.user) showAdmin(session.user);
+    });
+  }
+  document.addEventListener('DOMContentLoaded',init);
+})();
+</script>
 </body>
 </html>
