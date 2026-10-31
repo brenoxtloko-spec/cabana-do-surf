@@ -12,7 +12,18 @@
     a{color:inherit;text-decoration:none}button,input,select,textarea{font:inherit}.container{width:min(1200px,calc(100% - 28px));margin:auto}
     header{position:sticky;top:0;z-index:10;background:rgba(0,0,0,.94);border-bottom:1px solid var(--border);backdrop-filter:blur(10px)}
     .nav{min-height:66px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{font-size:clamp(20px,3vw,29px);font-weight:900;color:var(--gold);letter-spacing:.5px}.menu{display:flex;gap:18px;align-items:center}.menu a,.menu button{background:none;border:0;color:var(--text);cursor:pointer;padding:10px}
-    .hero{padding:55px 0 32px;background:radial-gradient(circle at 25% 20%,rgba(212,166,74,.16),transparent 42%)}.hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:25px;align-items:center}
+    .hero{padding:72px 0 66px;background:radial-gradient(ellipse at 50% 0%,rgba(212,166,74,.22),transparent 58%),linear-gradient(135deg,#17130b 0%,#080808 55%,#171109 100%);border-bottom:1px solid rgba(212,166,74,.22);text-align:center;position:relative;overflow:hidden}
+    .hero:before,.hero:after{content:"";position:absolute;width:280px;height:280px;border:1px solid rgba(212,166,74,.12);border-radius:50%;pointer-events:none}
+    .hero:before{left:-150px;top:-130px}.hero:after{right:-150px;bottom:-170px}
+    .hero-grid{display:flex;justify-content:center;align-items:center;position:relative;z-index:1}
+    .hero-copy{max-width:900px;margin:auto}
+    .hero-kicker{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(239,195,91,.48);border-radius:999px;padding:9px 17px;color:var(--gold);background:rgba(212,166,74,.09);font-size:13px;font-weight:800;letter-spacing:2px;text-transform:uppercase}
+    .hero h1{font:900 clamp(42px,7vw,82px)/.98 Arial,Helvetica,sans-serif;letter-spacing:-3px;margin:25px 0 18px;text-transform:uppercase;color:#fff}
+    .hero h1 .accent{display:block;color:var(--gold);text-shadow:0 5px 35px rgba(212,166,74,.18)}
+    .hero .lead{font-size:clamp(16px,2vw,20px);line-height:1.65;color:#d0cbc0;max-width:720px;margin:0 auto 27px}
+    .hero-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+    .hero .btn{padding:15px 28px;font-size:16px;box-shadow:0 8px 24px rgba(212,166,74,.2)}
+    .hero-note{margin-top:25px;color:#b9ad91;font-size:13px;letter-spacing:.5px}
     .tag,.pill{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:8px 13px;color:var(--gold);background:rgba(212,166,74,.07)}
     h1{font: bold clamp(38px,6vw,70px)/1 Georgia,serif;margin:18px 0}.accent{color:var(--gold)}.lead{font-size:18px;line-height:1.6;color:var(--muted);max-width:680px}
     .panel,.card,.admin-box{background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.01));border:1px solid var(--border);border-radius:22px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
@@ -48,15 +59,14 @@
 
 <main id="inicio">
   <section class="hero"><div class="container hero-grid">
-    <div><span class="tag">Moda masculina • Coleção 2026</span>
-      <h1>Estilo que define <span class="accent">quem você é</span></h1>
-      <p class="lead">Confira os produtos disponíveis na Cabana do Surf. Gostou de alguma peça? Chame nossa equipe pelo WhatsApp para consultar tamanhos e comprar.</p>
-      <a class="btn" href="#catalogo">Ver catálogo</a>
-    </div>
-    <div class="panel hero-card">
-      <div class="feature"><strong>Atendimento pelo WhatsApp</strong><br><span class="muted">Tire dúvidas e faça seu pedido diretamente com a loja.</span></div>
-      <div class="feature"><strong>Novidades frequentes</strong><br><span class="muted">Consulte os produtos disponíveis no catálogo.</span></div>
-      <div class="feature"><strong>Cabana do Surf</strong><br><span class="muted">Angra dos Reis • RJ</span></div>
+    <div class="hero-copy">
+      <span class="hero-kicker">✦ CABANA DO SURF • ANGRA DOS REIS</span>
+      <h1>CATÁLOGO <span class="accent">CABANA DO SURF</span></h1>
+      <p class="lead">Encontre seu próximo estilo. Explore nossa seleção de camisas, bermudas, tênis e muito mais. Escolha seus produtos e fale diretamente com a nossa equipe.</p>
+      <div class="hero-actions">
+        <a class="btn" href="#catalogo">EXPLORAR CATÁLOGO →</a>
+      </div>
+      <div class="hero-note">MODA • ESPORTE • ESTILO — TUDO EM UM SÓ LUGAR</div>
     </div>
   </div></section>
 
