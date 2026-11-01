@@ -144,7 +144,15 @@
         </div>
         <div class="admin-box">
           <h3>Produtos cadastrados</h3>
-          <div id="adminProductList"><div class="muted">Carregando...</div></div>
+          <div id="adminCategoryNavigation" class="category-nav"></div>
+          <div id="adminSizeNavigation" class="hidden">
+            <button type="button" class="small-btn" id="adminBackCategories">← Voltar às categorias</button>
+            <h4 id="adminSelectedCategory" style="color:var(--gold);margin:14px 0 8px"></h4>
+            <div id="adminSizeButtons" class="size-nav"></div>
+            <input id="adminSearch" type="search" placeholder="Buscar produto pelo nome ou código..." style="margin:8px 0 12px">
+            <div id="adminFilteredCount" class="muted" style="margin-bottom:12px"></div>
+          </div>
+          <div id="adminProductList"><div class="muted">Escolha uma categoria.</div></div>
         </div>
       </div>
       <div id="settingsTab" class="admin-box hidden">
@@ -176,6 +184,9 @@
   let editingId = null;
   let selectedCategory = '';
   let selectedSize = '';
+  let adminRows = [];
+  let adminCategory = '';
+  let adminSize = '';
 
   function showStatus(id, message, type='error') {
     const el = $(id);
@@ -297,6 +308,48 @@
     const {data} = db.storage.from(STORAGE_BUCKET).getPublicUrl(path);
     return data.publicUrl;
   }
+  function renderAdminCategories() {
+    const counts = new Map();
+    adminRows.forEach(p=>counts.set(p.category,(counts.get(p.category)||0)+1));
+    const categories=[...counts.keys()].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    $('adminCategoryNavigation').innerHTML=categories.map(c=>
+      `<button type="button" class="nav-chip" data-admin-category="${escapeHtml(c)}">${escapeHtml(c)} (${counts.get(c)})</button>`
+    ).join('') || '<div class="muted">Nenhuma categoria cadastrada.</div>';
+    if(adminCategory && !counts.has(adminCategory)) {adminCategory='';adminSize='';}
+    renderAdminList();
+  }
+  function renderAdminList() {
+    const hasCategory=!!adminCategory;
+    $('adminCategoryNavigation').classList.toggle('hidden',hasCategory);
+    $('adminSizeNavigation').classList.toggle('hidden',!hasCategory);
+    if(!hasCategory) {
+      $('adminProductList').innerHTML='<div class="muted">Selecione uma categoria acima para encontrar e excluir produtos.</div>';
+      return;
+    }
+    $('adminSelectedCategory').textContent=adminCategory;
+    const categoryRows=adminRows.filter(p=>p.category===adminCategory);
+    const sizes=[...new Set(categoryRows.flatMap(productSizes))].sort((a,b)=>{
+      const order=['PP','P','M','G','GG','XG','XGG','XXG','G1','G2','G3','G4','3G','4G','5G'];
+      const ai=order.indexOf(a),bi=order.indexOf(b);
+      return (ai<0?99:ai)-(bi<0?99:bi)||a.localeCompare(b,'pt-BR');
+    });
+    $('adminSizeButtons').innerHTML=`<button type="button" class="nav-chip ${!adminSize?'active':''}" data-admin-size="">Todos (${categoryRows.length})</button>`+
+      sizes.map(size=>`<button type="button" class="nav-chip ${adminSize===size?'active':''}" data-admin-size="${escapeHtml(size)}">${escapeHtml(size)} (${categoryRows.filter(p=>productSizes(p).includes(size)).length})</button>`).join('');
+    const query=$('adminSearch').value.trim().toLocaleLowerCase('pt-BR');
+    const rows=categoryRows.filter(p=>(!adminSize||productSizes(p).includes(adminSize)) &&
+      `${p.name} ${p.brand} ${p.color}`.toLocaleLowerCase('pt-BR').includes(query));
+    $('adminFilteredCount').textContent=`${rows.length} produto(s) encontrado(s)`;
+    $('adminProductList').innerHTML=rows.length ? rows.map(p=>`
+      <div class="product-row">
+        ${p.image_url ? `<img src="${escapeHtml(p.image_url)}" alt="">` : '<div></div>'}
+        <div><strong>${escapeHtml(p.name)}</strong><br><span class="muted">${escapeHtml(p.category)}${p.sizes?' • '+escapeHtml(p.sizes):''} • Estoque: ${p.stock} • ${p.active?'Ativo':'Oculto'}</span><br><span class="price">${money(p.price)}</span></div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="small-btn" data-edit="${escapeHtml(p.id)}">Editar</button>
+          <button class="small-btn danger" data-delete="${escapeHtml(p.id)}">Excluir</button>
+          <button class="small-btn" data-toggle="${escapeHtml(p.id)}" data-active="${p.active?'1':'0'}">${p.active?'Ocultar':'Ativar'}</button>
+        </div>
+      </div>`).join('') : '<div class="empty">Nenhum produto encontrado nesta seleção.</div>';
+  }
   async function loadAdminProducts() {
     const {data,error} = await db.from('products').select('*').order('created_at',{ascending:false});
     if (error) {
@@ -304,17 +357,8 @@
       $('adminProductList').textContent = 'Erro ao carregar produtos: ' + error.message;
       return;
     }
-    const rows = (data || []).map(normalizeProduct);
-    $('adminProductList').innerHTML = rows.length ? rows.map(p=>`
-      <div class="product-row">
-        ${p.image_url ? `<img src="${escapeHtml(p.image_url)}" alt="">` : '<div></div>'}
-        <div><strong>${escapeHtml(p.name)}</strong><br><span class="muted">${escapeHtml(p.category)} • Estoque: ${p.stock} • ${p.active?'Ativo':'Oculto'}</span><br><span class="price">${money(p.price)}</span></div>
-        <div style="display:flex;gap:7px;flex-wrap:wrap">
-          <button class="small-btn" data-edit="${escapeHtml(p.id)}">Editar</button>
-          <button class="small-btn danger" data-delete="${escapeHtml(p.id)}">Excluir</button>
-          <button class="small-btn" data-toggle="${escapeHtml(p.id)}" data-active="${p.active?'1':'0'}">${p.active?'Ocultar':'Ativar'}</button>
-        </div>
-      </div>`).join('') : '<div class="muted">Nenhum produto cadastrado ainda.</div>';
+    adminRows=(data||[]).map(normalizeProduct);
+    renderAdminCategories();
   }
   function resetProductForm() {
     editingId = null;
@@ -485,6 +529,20 @@
     $('productForm').addEventListener('submit',saveProduct);
     $('bulkSaveButton').addEventListener('click',saveBulkProducts);
     $('cancelEditButton').addEventListener('click',resetProductForm);
+    $('adminCategoryNavigation').addEventListener('click',event=>{
+      const btn=event.target.closest('[data-admin-category]');
+      if(!btn)return;
+      adminCategory=btn.dataset.adminCategory;adminSize='';$('adminSearch').value='';renderAdminList();
+    });
+    $('adminBackCategories').addEventListener('click',()=>{
+      adminCategory='';adminSize='';$('adminSearch').value='';renderAdminList();
+    });
+    $('adminSizeButtons').addEventListener('click',event=>{
+      const btn=event.target.closest('[data-admin-size]');
+      if(!btn)return;
+      adminSize=btn.dataset.adminSize;renderAdminList();
+    });
+    $('adminSearch').addEventListener('input',renderAdminList);
     $('adminProductList').addEventListener('click',event=>{
       const edit=event.target.closest('[data-edit]');
       const del=event.target.closest('[data-delete]');
