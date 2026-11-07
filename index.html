@@ -214,27 +214,31 @@
     const text = `Olá! Tenho interesse neste produto da Cabana do Surf:\n${product.name}\nPreço: ${money(product.price)}\nGostaria de consultar disponibilidade e tamanhos.`;
     return `https://wa.me/${WHATSAPP_LOJA}?text=${encodeURIComponent(text)}`;
   }
-  // Agrupamento visual seguro: mantém os registros e as fotos originais no Supabase.
-  function categoryGroup(raw) {
-    const value=String(raw||'Geral').trim();
-    const normalized=value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim();
-    if (/^(?:camisa|camisas)\s+premium(?:\s+(?:pp|p|m|g|gg|xg|xgg|g[1-5]|[345]g))?$/.test(normalized) ||
-        /^premium(?:\s+(?:pp|p|m|g|gg|xg|xgg|g[1-5]|[345]g))?$/.test(normalized)) return 'Camisas Premium';
-    if (/^(?:bermuda|bermudas)\s+(?:de\s+)?sarja(?:\s+(?:pp|p|m|g|gg|xg|xgg|g[1-5]|[345]g|3[6-9]|4[0-9]|5[0-9]))?$/.test(normalized)) return 'Bermudas Sarja';
-    return value;
+  // Agrupamento visual das categorias antigas do Supabase, sem alterar ou apagar registros.
+  function groupedCategory(raw) {
+    const name = String(raw || 'Geral').trim();
+    const key = name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ');
+    if (/^CAMISAS? PREMIUM(?:\s*\([^)]+\)|\s+[MG]{1,2})?$/.test(key)) return 'CAMISAS PREMIUM';
+    if (/^BERMUDAS? (?:DE )?SARJA(?:\s|$)/.test(key)) return 'BERMUDAS SARJA';
+    return name;
   }
-  function displaySizes(product) {
-    const sizes=String(product.sizes||'').split(',').map(x=>x.trim().toUpperCase()).filter(Boolean);
-    const original=String(product.category||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    const match=original.match(/(?:^|\s)(PP|P|M|G|GG|XG|XGG|G[1-5]|[345]G|3[6-9]|4[0-9]|5[0-9])$/i);
-    if (match && categoryGroup(product.category)!==product.category && !sizes.includes(match[1].toUpperCase())) sizes.push(match[1].toUpperCase());
-    return sizes;
+  function inferredCategorySize(raw) {
+    const name = String(raw || '').trim().toUpperCase();
+    const match = name.match(/\(\s*(PP|P|M|G|GG|XG|XGG|G[1-5])\s*\)\s*$/);
+    if (match) return match[1];
+    const trailing = name.match(/\s+(PP|P|M|G|GG|XG|XGG|G[1-5])$/);
+    return trailing ? trailing[1] : '';
   }
   function normalizeProduct(row) {
+    const originalCategory = row.category || 'Geral';
+    const category = groupedCategory(originalCategory);
+    const existingSizes = String(row.sizes || '').split(',').map(s=>s.trim()).filter(Boolean);
+    const inferredSize = category !== originalCategory ? inferredCategorySize(originalCategory) : '';
+    if (inferredSize && !existingSizes.some(s=>s.toUpperCase()===inferredSize)) existingSizes.push(inferredSize);
     return {
       id: row.id, name: row.name || '', brand: row.brand || 'Cabana do Surf',
-      category: row.category || 'Geral', price: Number(row.price || 0),
-      stock: Number(row.stock || 0), sizes: row.sizes || '',
+      category, originalCategory, price: Number(row.price || 0),
+      stock: Number(row.stock || 0), sizes: existingSizes.join(', '),
       color: row.color || '', image_url: row.image_url || '',
       description: row.description || '', active: row.active !== false
     };
@@ -255,7 +259,7 @@
     }
     allProducts = (data || []).map(normalizeProduct);
     renderCategoryNavigation();
-    if(selectedCategory && !allProducts.some(p=>categoryGroup(p.category)===selectedCategory)) {
+    if(selectedCategory && !allProducts.some(p=>p.category===selectedCategory)) {
       selectedCategory=''; selectedSize='';
       $('sizeNavigation').classList.add('hidden');
       $('categoryNavigation').classList.remove('hidden');
@@ -267,13 +271,13 @@
     }
   }
   function productSizes(product) {
-    return displaySizes(product);
+    return String(product.sizes || '').split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
   }
   function renderCategoryNavigation() {
-    const categories = [...new Set(allProducts.map(p=>categoryGroup(p.category)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    const categories = [...new Set(allProducts.map(p=>p.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
     $('categoryButtons').innerHTML = categories.length
       ? categories.map(c=>{
-          const first = allProducts.find(p=>categoryGroup(p.category)===c && p.image_url);
+          const first = allProducts.find(p=>p.category===c && p.image_url);
           const thumb = first ? `<img class="category-thumb" src="${escapeHtml(first.image_url)}" alt="Foto de ${escapeHtml(c)}" loading="lazy">` : `<span class="category-thumb category-thumb-empty">Sem foto</span>`;
           return `<button type="button" class="nav-chip category-tile" data-category="${escapeHtml(c)}"><span class="category-tile-name">${escapeHtml(c)}</span>${thumb}</button>`;
         }).join('')
@@ -285,7 +289,7 @@
     $('categoryNavigation').classList.add('hidden');
     $('sizeNavigation').classList.remove('hidden');
     $('selectedCategoryTitle').textContent = category;
-    const products = allProducts.filter(p=>categoryGroup(p.category)===category);
+    const products = allProducts.filter(p=>p.category===category);
     const sizes = [...new Set(products.flatMap(productSizes))].sort((a,b)=>{
       const order=['PP','P','M','G','GG','XG','XGG','XXG','3G','4G','5G'];
       const ai=order.indexOf(a), bi=order.indexOf(b);
@@ -301,7 +305,7 @@
     const size = selectedSize;
     const filtered = allProducts.filter(p => {
       const matchesText = `${p.name} ${p.brand} ${p.category} ${p.color}`.toLowerCase().includes(query);
-      const matchesCategory = !category || categoryGroup(p.category) === category;
+      const matchesCategory = !category || p.category === category;
       const matchesSize = !size || productSizes(p).includes(size);
       return matchesText && matchesCategory && matchesSize;
     });
@@ -316,7 +320,7 @@
       return `<article class="card">
         ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(p.name)}" loading="lazy">` : '<div style="height:270px;display:grid;place-items:center;background:#191919;color:#aaa">Sem foto</div>'}
         <div class="card-body">
-          <span class="pill">${escapeHtml(categoryGroup(p.category))}</span>
+          <span class="pill">${escapeHtml(p.category)}</span>
           <h3>${escapeHtml(p.name)}</h3>
           <div class="muted">${escapeHtml(p.brand)}${p.color ? ' • '+escapeHtml(p.color) : ''}</div>
           ${p.description ? `<p class="muted">${escapeHtml(p.description)}</p>` : ''}
@@ -339,7 +343,7 @@
   }
   function renderAdminCategories() {
     const counts = new Map();
-    adminRows.forEach(p=>counts.set(categoryGroup(p.category),(counts.get(categoryGroup(p.category))||0)+1));
+    adminRows.forEach(p=>counts.set(p.category,(counts.get(p.category)||0)+1));
     const categories=[...counts.keys()].sort((a,b)=>a.localeCompare(b,'pt-BR'));
     $('adminCategoryNavigation').innerHTML=categories.map(c=>
       `<button type="button" class="nav-chip" data-admin-category="${escapeHtml(c)}">${escapeHtml(c)} (${counts.get(c)})</button>`
@@ -356,7 +360,7 @@
       return;
     }
     $('adminSelectedCategory').textContent=adminCategory;
-    const categoryRows=adminRows.filter(p=>categoryGroup(p.category)===adminCategory);
+    const categoryRows=adminRows.filter(p=>p.category===adminCategory);
     const sizes=[...new Set(categoryRows.flatMap(productSizes))].sort((a,b)=>{
       const order=['PP','P','M','G','GG','XG','XGG','XXG','G1','G2','G3','G4','3G','4G','5G'];
       const ai=order.indexOf(a),bi=order.indexOf(b);
@@ -371,7 +375,7 @@
     $('adminProductList').innerHTML=rows.length ? rows.map(p=>`
       <div class="product-row">
         ${p.image_url ? `<img src="${escapeHtml(p.image_url)}" alt="">` : '<div></div>'}
-        <div><strong>${escapeHtml(p.name)}</strong><br><span class="muted">${escapeHtml(categoryGroup(p.category))}${productSizes(p).length?' • '+escapeHtml(productSizes(p).join(', ')):''} • Estoque: ${p.stock} • ${p.active?'Ativo':'Oculto'}</span><br><span class="price">${money(p.price)}</span></div>
+        <div><strong>${escapeHtml(p.name)}</strong><br><span class="muted">${escapeHtml(p.category)}${p.sizes?' • '+escapeHtml(p.sizes):''} • Estoque: ${p.stock} • ${p.active?'Ativo':'Oculto'}</span><br><span class="price">${money(p.price)}</span></div>
         <div style="display:flex;gap:7px;flex-wrap:wrap">
           <button class="small-btn" data-edit="${escapeHtml(p.id)}">Editar</button>
           <button class="small-btn danger" data-delete="${escapeHtml(p.id)}">Excluir</button>
@@ -405,7 +409,7 @@
       showStatus('bulkStatus','Selecione pelo menos uma foto.','error');
       return;
     }
-    const category = categoryGroup($('pCategory').value.trim());
+    const category = $('pCategory').value.trim();
     const price = Number($('pPrice').value);
     const stock = Number($('pStock').value);
     if (!category || !Number.isFinite(price) || price <= 0 || !Number.isInteger(stock) || stock < 0) {
@@ -461,7 +465,7 @@
       if (file) imageUrl = await uploadPhoto(file);
       const product = {
         name, brand:$('pBrand').value.trim() || 'Cabana do Surf',
-        category:categoryGroup($('pCategory').value.trim() || 'Geral'), price, stock,
+        category:$('pCategory').value.trim() || 'Geral', price, stock,
         sizes:$('pSizes').value.trim(), color:$('pColor').value.trim(),
         description:$('pDesc').value.trim(), active:true
       };
@@ -489,7 +493,7 @@
     if (error) { showStatus('productStatus',error.message); return; }
     const p = normalizeProduct(data);
     editingId = p.id;
-    $('pName').value=p.name; $('pBrand').value=p.brand; $('pCategory').value=p.category;
+    $('pName').value=p.name; $('pBrand').value=p.brand; $('pCategory').value=p.originalCategory;
     $('pPrice').value=p.price; $('pStock').value=p.stock; $('pSizes').value=p.sizes;
     $('pColor').value=p.color; $('pDesc').value=p.description; $('pImage').value='';
     $('formTitle').textContent='Editar produto'; $('saveProductButton').textContent='Atualizar produto';
