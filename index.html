@@ -214,22 +214,25 @@
     const text = `Olá! Tenho interesse neste produto da Cabana do Surf:\n${product.name}\nPreço: ${money(product.price)}\nGostaria de consultar disponibilidade e tamanhos.`;
     return `https://wa.me/${WHATSAPP_LOJA}?text=${encodeURIComponent(text)}`;
   }
-  // Agrupamento visual das categorias antigas do Supabase, sem alterar ou apagar registros.
+  // Unifica apenas a apresentação: os registros originais permanecem intactos no Supabase.
+  function categoryKey(raw) {
+    return String(raw || 'Geral').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .toUpperCase().replace(/\s+/g,' ').trim();
+  }
   function groupedCategory(raw) {
     const name = String(raw || 'Geral').trim();
-    const key = name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ');
-    if (/^CAMISAS? PREMIUM(?:\s*\([^)]+\)|\s+[MG]{1,2})?$/.test(key)) return 'CAMISAS PREMIUM';
-    if (/^BERMUDAS? (?:DE )?S[AE]RJA(?:\s|$)/.test(key)) return 'BERMUDAS SARJA';
-    if (/^CAMISAS? OVER(?:SIZE|SIZED)(?:\s*\([^)]+\)|\s+[A-Z0-9]+)?$/.test(key)) return 'CAMISAS OVERSIZED';
-    if (/^CAMISAS?\s+MALHA\s+PERUANA\s+IMPORTADA\b/.test(key)) return 'CAMISA MALHA PERUANA IMPORTADA';
+    const key = categoryKey(name);
+    if (/^CAMISAS?\s+MALHA\s+PERUANA\s+IMPORTADA(?:\b|\s*[(\[])/.test(key)) return 'CAMISA MALHA PERUANA IMPORTADA';
+    if (/^CAMISAS?\s+PREMIUM(?:\b|\s*[(\[])/.test(key)) return 'CAMISAS PREMIUM';
+    if (/^BERMUDAS?\s+(?:DE\s+)?S[AE]RJA\b/.test(key)) return 'BERMUDAS SARJA';
+    if (/^CAMISAS?\s+OVER\s*SIZE(?:D)?\b/.test(key)) return 'CAMISAS OVERSIZED';
     return name;
   }
   function inferredCategorySize(raw) {
-    const name = String(raw || '').trim().toUpperCase();
-    const match = name.match(/\(\s*(PP|P|M|G|GG|XG|XGG|G[1-5])\s*\)\s*$/);
-    if (match) return match[1];
-    const trailing = name.match(/\s+(PP|P|M|G|GG|XG|XGG|G[1-5])$/);
-    return trailing ? trailing[1] : '';
+    const key = categoryKey(raw);
+    // Aceita P, M, G, GG etc. com parênteses, colchetes ou sufixo simples.
+    const match = key.match(/(?:\(|\[|\s)(PP|P|M|G|GG|XG|XGG|XXG|G[1-5]|[3-5]G)\s*[)\]]?$/);
+    return match ? match[1] : '';
   }
   function normalizeProduct(row) {
     const originalCategory = row.category || 'Geral';
