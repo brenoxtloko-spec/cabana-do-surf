@@ -221,7 +221,7 @@
     if (/^CAMISAS? PREMIUM(?:\s*\([^)]+\)|\s+[MG]{1,2})?$/.test(key)) return 'CAMISAS PREMIUM';
     if (/^BERMUDAS? (?:DE )?S[AE]RJA(?:\s|$)/.test(key)) return 'BERMUDAS SARJA';
     if (/^CAMISAS? OVER(?:SIZE|SIZED)(?:\s*\([^)]+\)|\s+[A-Z0-9]+)?$/.test(key)) return 'CAMISAS OVERSIZED';
-    if (/^CAMISAS? MALHA PERUANA IMPORTADA(?:\s*\([^)]+\)|\s+(?:PP|P|M|G|GG|XG|XGG|G[1-5]))?$/.test(key)) return 'CAMISA MALHA PERUANA IMPORTADA';
+    if (/^CAMISAS?\s+MALHA\s+PERUANA\s+IMPORTADA\b/.test(key)) return 'CAMISA MALHA PERUANA IMPORTADA';
     return name;
   }
   function inferredCategorySize(raw) {
