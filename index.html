@@ -219,7 +219,8 @@
     const name = String(raw || 'Geral').trim();
     const key = name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ');
     if (/^CAMISAS? PREMIUM(?:\s*\([^)]+\)|\s+[MG]{1,2})?$/.test(key)) return 'CAMISAS PREMIUM';
-    if (/^BERMUDAS? (?:DE )?SARJA(?:\s|$)/.test(key)) return 'BERMUDAS SARJA';
+    if (/^BERMUDAS? (?:DE )?S[AE]RJA(?:\s|$)/.test(key)) return 'BERMUDAS SARJA';
+    if (/^CAMISAS? OVER(?:SIZE|SIZED)(?:\s*\([^)]+\)|\s+[A-Z0-9]+)?$/.test(key)) return 'CAMISAS OVERSIZED';
     return name;
   }
   function inferredCategorySize(raw) {
